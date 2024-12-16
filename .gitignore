@@ -1,0 +1,32 @@
+# Python 관련 파일
+*.pyc
+__pycache__/
+*.pyo
+*.pyd
+.Python
+
+# 환경 파일
+.env
+*.env
+
+# 모델 파일 및 대형 데이터 파일
+*.ckpt
+*.csv
+*.tsv
+*.db
+
+# 로그 파일
+*.log
+
+# 기타 불필요한 파일
+*.bak
+*.swp
+*.tmp
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# OS 또는 툴 생성 파일
+*.~undo-tree*
+
