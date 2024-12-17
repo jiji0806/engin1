@@ -1039,7 +1039,7 @@ while True:
     new_ranked_markets = {}
     available_slots = {}
     markets_to_start = {}
-    wallet_balance = wallet_balance_fix = balance_calc(exchange_id, balance_currency)
+    # wallet_balance = wallet_balance_fix = balance_calc(exchange_id, balance_currency)
 
     exchange.load_time_difference()
     open_positions = exchange.fetch_positions()
