@@ -16,3 +16,8 @@ starter_v_h_jkkm.py
 
 starter_v_h_bybit_jkkm.py
 44,45,46,47
+
+--------------------------------------------------------
+find . -name "*Zone.Identifier" -type f -delete
+
+git clone git@github.com:jiji0806/engin1.git
