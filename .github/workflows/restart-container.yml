@@ -23,4 +23,3 @@ jobs:
           docker stop worldengin_container || true
           docker rm worldengin_container || true
           docker run -d --name worldengin_container worldengin_image
-
