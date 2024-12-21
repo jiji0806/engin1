@@ -14,6 +14,12 @@ jobs:
           echo "${{ secrets.EC2_PRIVATE_KEY }}" > /home/runner/.ssh/id_rsa
           chmod 600 /home/runner/.ssh/id_rsa
 
+
+          echo "--------------1-------------"
+          echo "${{ secrets.EC2_PRIVATE_KEY }}"
+          echo "--------------2-------------"
+          echo /home/runner/.ssh/id_rsa
+
       - name: Check SSH key permissions and directory contents
         run: |
           ls -al /home/runner/.ssh  # .ssh 디렉토리와 권한 확인
@@ -25,15 +31,12 @@ jobs:
           eval $(ssh-agent -s)
           ssh-add /home/runner/.ssh/id_rsa
 
-      - name: Debug SSH connection
-        run: |
-          ssh -v -i /home/runner/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} "echo 'SSH connection successful'"
-
       - name: SSH into EC2 and Restart Docker Container
         uses: appleboy/ssh-action@v0.1.4
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_PRIVATE_KEY }}
           script: |
             docker stop worldengin_container || true
             docker rm worldengin_container || true
