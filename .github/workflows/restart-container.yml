@@ -10,19 +10,23 @@ jobs:
     steps:
       - name: Set up SSH key directory
         run: |
-          mkdir -p /home/runner/.ssh  # SSH 키를 저장할 디렉토리 생성
+          # SSH 키를 저장할 디렉토리 생성
+          mkdir -p /home/runner/.ssh
+          # 비공개 키 저장
           echo "${{ secrets.EC2_PRIVATE_KEY }}" > /home/runner/.ssh/id_rsa
           chmod 600 /home/runner/.ssh/id_rsa
 
-
+          # 비공개 키를 echo로 출력하면 마스킹됨
           echo "--------------1-------------"
-          echo "${{ secrets.EC2_PRIVATE_KEY }}"
+          echo "*** Private Key Masked for Security ***"  # 실제 키는 보안상 마스킹됩니다.
           echo "--------------2-------------"
+          # id_rsa 파일을 확인
           cat /home/runner/.ssh/id_rsa
 
       - name: Check SSH key permissions and directory contents
         run: |
-          ls -al /home/runner/.ssh  # .ssh 디렉토리와 권한 확인
+          # .ssh 디렉토리와 권한 확인
+          ls -al /home/runner/.ssh
           ls -al /home/runner/.ssh/id_rsa  # id_rsa 파일의 권한 확인
           ls -ld /home/runner/.ssh  # .ssh 디렉토리 권한 확인
 
@@ -38,6 +42,7 @@ jobs:
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_PRIVATE_KEY }}
           script: |
+            # Docker 컨테이너를 종료하고 새로 시작
             docker stop worldengin_container || true
             docker rm worldengin_container || true
             docker run -d --name worldengin_container worldengin_image
