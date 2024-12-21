@@ -14,6 +14,12 @@ jobs:
           echo "${{ secrets.EC2_PRIVATE_KEY }}" | base64 --decode > /home/runner/.ssh/id_rsa
           chmod 600 /home/runner/.ssh/id_rsa
 
+      - name: Check SSH key permissions and directory contents
+        run: |
+          ls -al /home/runner/.ssh  # .ssh 디렉토리와 권한 확인
+          ls -al /home/runner/.ssh/id_rsa  # id_rsa 파일의 권한 확인
+          ls -ld /home/runner/.ssh  # .ssh 디렉토리 권한 확인
+
       - name: Set up SSH key with ssh-agent
         run: |
           eval $(ssh-agent -s)
