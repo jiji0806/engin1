@@ -8,15 +8,16 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Decode and set permissions for SSH key
+      - name: Set up SSH key directory
         run: |
-          echo "${{ secrets.EC2_PRIVATE_KEY }}" | base64 --decode > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
+          mkdir -p /home/runner/.ssh  # SSH 키를 저장할 디렉토리 생성
+          echo "${{ secrets.EC2_PRIVATE_KEY }}" | base64 --decode > /home/runner/.ssh/id_rsa
+          chmod 600 /home/runner/.ssh/id_rsa
 
       - name: Set up SSH key with ssh-agent
         run: |
           eval $(ssh-agent -s)
-          ssh-add ~/.ssh/id_rsa
+          ssh-add /home/runner/.ssh/id_rsa
 
       - name: SSH into EC2 and Restart Docker Container
         uses: appleboy/ssh-action@v0.1.4
