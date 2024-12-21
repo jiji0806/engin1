@@ -11,7 +11,7 @@ jobs:
       - name: Set up SSH key directory
         run: |
           mkdir -p /home/runner/.ssh  # SSH 키를 저장할 디렉토리 생성
-          echo "${{ secrets.EC2_PRIVATE_KEY }}" | base64 --decode > /home/runner/.ssh/id_rsa
+          echo "${{ secrets.EC2_PRIVATE_KEY }}" > /home/runner/.ssh/id_rsa
           chmod 600 /home/runner/.ssh/id_rsa
 
       - name: Check SSH key permissions and directory contents
