@@ -4,28 +4,18 @@ on:
       - main
 
 jobs:
-  echo-to-ec2:
+  run-script-on-ec2:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Set up SSH key directory
-        run: |
-          mkdir -p /home/runner/.ssh
-          echo "${{ secrets.EC2_PRIVATE_KEY }}" > /home/runner/.ssh/id_rsa
-          chmod 600 /home/runner/.ssh/id_rsa
-
-      - name: Set up SSH key with ssh-agent
-        run: |
-          eval $(ssh-agent -s)
-          ssh-add /home/runner/.ssh/id_rsa
-
-      - name: SSH into EC2 and Echo Message
-        uses: appleboy/ssh-action@v0.1.5
+      - name: Run scripts in server
+        uses: appleboy/ssh-action@v0.1.5  # 안정적인 버전 사용
         with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_PRIVATE_KEY }}
-          script: echo "Hello from GitHub Actions!"
-          debug: true  # 디버그 활성화
-          ssh_options: "-v"  # SSH 연결 디버깅을 위한 옵션
+          key: ${{ secrets.KEY }}            # EC2 private key
+          host: ${{ secrets.HOST }}          # EC2 host (IP or domain)
+          username: ${{ secrets.USER_NAME }} # EC2 username (예: ubuntu, ec2-user)
+          port: ${{ secrets.PORT }}          # SSH port (기본 22)
+          script: |
+            whoami  # 서버에서 실행할 명령어
+          debug: true  # 디버깅 활성화 (SSH 연결 상태 등을 확인할 수 있습니다)
 
