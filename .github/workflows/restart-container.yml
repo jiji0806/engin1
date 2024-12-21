@@ -1,0 +1,23 @@
+name: Restart Docker Container on EC2
+
+on:
+  push:
+    branches:
+      - main  # main 브랜치에 푸시될 때 실행
+
+jobs:
+  restart-container:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: SSH into EC2 and Restart Docker Container
+      uses: appleboy/ssh-action@v0.1.4
+      with:
+        host: ${{ secrets.EC2_HOST }}
+        username: ${{ secrets.EC2_USER }}
+        key: ${{ secrets.EC2_PRIVATE_KEY }}
+        script: |
+          docker stop worldengin_container || true
+          docker rm worldengin_container || true
+          docker run -d --name worldengin_container worldengin_image
+
