@@ -11404,6 +11404,14 @@ clear_cnt = 0
 p_clear_cnt = 0
 ######################################################################################################################################################
 if exchange_id == 'binanceusdm':
+
+    try:
+        # 마진 모드 변경
+        margin_mode = 'CROSS'  # 'ISOLATED' 또는 'CROSS'
+        response = exchange.set_margin_mode(symbol=symbol, marginMode=margin_mode)
+    except Exception as e:
+        print("오류 발생:", str(e))
+
     # Set initial parameters
     # symbol = "RENUSDT"
     initial_leverage = 50  # Starting leverage
@@ -11431,13 +11439,21 @@ if exchange_id == 'binanceusdm':
     if c_l < min_leverage:
         print("Unable to set leverage within the allowed range.")
 elif exchange_id == 'bybit':
+
+    try:
+        # 마진 모드 변경
+        margin_mode = 'cross'  # 'ISOLATED' 또는 'CROSS'
+        response = exchange.set_margin_mode(symbol=l_s, marginMode=margin_mode)
+    except Exception as e:
+        print("오류 발생:", str(e))
+
     # Set initial parameters
     # symbol = "RENUSDT"
     initial_leverage = 50  # Starting leverage
     min_leverage = 1        # Minimum leverage to attempt
     c_l = initial_leverage
     t_s = 15
-    
+
     # Try setting leverage
     while c_l >= min_leverage:
         try:
@@ -11882,9 +11898,9 @@ while True:
                             # and (df_15m.feature1.iloc[-1] > 0)
                             and (peaker_side == 'long')
                             and (peaker_option == 'forward')
-                            and (globals()['df_1m']['second_combined_diff_filtered'].iloc[-1] < 0.5)
-                            and (globals()['df_5m']['second_combined_diff_filtered'].iloc[-1] < 0.4)
-                            and ((globals()['df_15m']['second_combined_diff_filtered'].iloc[-1]) < 0.4)
+                            and (globals()['df_1m']['second_combined_diff_filtered'].iloc[-1] < 0.7)
+                            and (globals()['df_5m']['second_combined_diff_filtered'].iloc[-1] < 0.7)
+                            and ((globals()['df_15m']['second_combined_diff_filtered'].iloc[-1]) < 0.7)
                             # and (globals()['df_1m']['second_combined_diff_filtered_diff'].iloc[-1] > 0)
                             # and not ((df_1h['feature1'].iloc[-1] > 0) and (df_1h['feature1_diff'].iloc[-1] > 0))
                         )
@@ -11936,9 +11952,9 @@ while True:
                             (stg_type in ['stg1'])
                             and (peaker_side == 'long')
                             and (peaker_option == 'forward')
-                            and (globals()['df_1m']['second_combined_diff_filtered'].iloc[-1] < 0.5)
-                            and (globals()['df_5m']['second_combined_diff_filtered'].iloc[-1] < 0.4)
-                            and ((globals()['df_15m']['second_combined_diff_filtered'].iloc[-1]) < 0.4)
+                            and (globals()['df_1m']['second_combined_diff_filtered'].iloc[-1] < 0.7)
+                            and (globals()['df_5m']['second_combined_diff_filtered'].iloc[-1] < 0.7)
+                            and ((globals()['df_15m']['second_combined_diff_filtered'].iloc[-1]) < 0.7)
                             # and (globals()['df_15m']['second_combined_diff_filtered'].iloc[-1] < 0.3)
                             # and (globals()['df_4h']['second_combined_diff_filtered'].iloc[-1] < 0.3)
 
@@ -12001,9 +12017,9 @@ while True:
                             # and (position_size == 0)
                             and (peaker_side == 'long')
                             and (peaker_option == 'forward')
-                            and (globals()['df_1m']['second_combined_diff_filtered'].iloc[-1] < 0.5)
-                            and (globals()['df_5m']['second_combined_diff_filtered'].iloc[-1] < 0.4)
-                            and ((globals()['df_15m']['second_combined_diff_filtered'].iloc[-1]) < 0.4)
+                            and (globals()['df_1m']['second_combined_diff_filtered'].iloc[-1] < 0.7)
+                            and (globals()['df_5m']['second_combined_diff_filtered'].iloc[-1] < 0.7)
+                            and ((globals()['df_15m']['second_combined_diff_filtered'].iloc[-1]) < 0.7)
                             and (df_1m['RSI_14'].iloc[-1] < 70)
                             and (df_5m['RSI_14'].iloc[-1] < 70)
                             and (df_1m['macd_diff_35'].iloc[-3] > 0)
@@ -12318,9 +12334,9 @@ while True:
                             # and (df_15m.feature1.iloc[-1] > 0)
                             and (peaker_side == 'short')
                             and (peaker_option == 'forward')
-                            and (globals()['df_1m']['second_combined_diff_filtered'].iloc[-1] > -0.5)
-                            and (globals()['df_5m']['second_combined_diff_filtered'].iloc[-1] > -0.4)
-                            and ((globals()['df_15m']['second_combined_diff_filtered'].iloc[-1]) > -0.4)
+                            and (globals()['df_1m']['second_combined_diff_filtered'].iloc[-1] > -0.7)
+                            and (globals()['df_5m']['second_combined_diff_filtered'].iloc[-1] > -0.7)
+                            and ((globals()['df_15m']['second_combined_diff_filtered'].iloc[-1]) > -0.7)
                             # and (globals()['df_1m']['second_combined_diff_filtered_diff'].iloc[-1] < 0)
                             # and not ((df_1h['feature1'].iloc[-1] > 0) and (df_1h['feature1_diff'].iloc[-1] > 0))
                         )
@@ -12373,9 +12389,9 @@ while True:
                             (stg_type in ['stg1'])
                             and (peaker_side == 'short')
                             and (peaker_option == 'forward')
-                            and (globals()['df_1m']['second_combined_diff_filtered'].iloc[-1] > -0.5)
-                            and (globals()['df_5m']['second_combined_diff_filtered'].iloc[-1] > -0.4)
-                            and ((globals()['df_15m']['second_combined_diff_filtered'].iloc[-1]) > -0.4)
+                            and (globals()['df_1m']['second_combined_diff_filtered'].iloc[-1] > -0.7)
+                            and (globals()['df_5m']['second_combined_diff_filtered'].iloc[-1] > -0.7)
+                            and ((globals()['df_15m']['second_combined_diff_filtered'].iloc[-1]) > -0.7)
                             # and (globals()['df_15m']['second_combined_diff_filtered'].iloc[-1] > -0.3)
                             # and (globals()['df_4h']['second_combined_diff_filtered'].iloc[-1] > -0.3)
 
@@ -12450,9 +12466,9 @@ while True:
                             # and (position_size == 0)
                             and (peaker_side == 'short')
                             and (peaker_option == 'forward')
-                            and (globals()['df_1m']['second_combined_diff_filtered'].iloc[-1] > -0.5)
-                            and (globals()['df_5m']['second_combined_diff_filtered'].iloc[-1] > -0.4)
-                            and ((globals()['df_15m']['second_combined_diff_filtered'].iloc[-1]) > -0.4)
+                            and (globals()['df_1m']['second_combined_diff_filtered'].iloc[-1] > -0.7)
+                            and (globals()['df_5m']['second_combined_diff_filtered'].iloc[-1] > -0.7)
+                            and ((globals()['df_15m']['second_combined_diff_filtered'].iloc[-1]) > -0.7)
                             and (df_1m['RSI_14'].iloc[-1] > 30)
                             and (df_5m['RSI_14'].iloc[-1] > 30)
                             and (df_1m['macd_diff_35'].iloc[-3] < 0)

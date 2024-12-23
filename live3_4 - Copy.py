@@ -83,8 +83,8 @@ from scipy.signal import savgol_filter
 import statsmodels.api as sm
 #####################################################################################################################################
 #from binance.client import Client
-api_key = 'r4M6aBy24Ae5oGld7q'
-api_secret = 'oYMoflkS6Pb4nvrAwfrm8hPFWLwRWvoLbtWo'
+api_key = 'aiJSPacDRzVVEobWHmiHjRdVLdh6725kR6iKqSgEofU9PpZehmvHubh86uHNiSkc'
+api_secret = 'O8Q2yh2gfdLkxhv3LCIc452Yo2WtH2NVXH9yt7j7Jsse6QYzNv3kliGMw7axMso7'
 #market_id = 'YFIUSDT'
 #client = Client(api_key, api_secret)
 #
@@ -107,7 +107,7 @@ my_config = Config(
 dynamodb_table_name = 'worldengin_configuration'
 ####################################################################################################################################
 ####################################################################################################################################
-trader_name = 'live3_44'
+trader_name = 'live3_4'
 ####################################################################################################################################
 ####################################################################################################################################
 # trader_name = 'binanceusdm_perpetual_1' # 3. delivatives_futures_usdt_perpetual
@@ -237,7 +237,7 @@ db_path = r'/aws/database/t1_transaction.db'
 # conn = sqlite3.connect(db_path)
 # db = conn.cursor()
 
-exchange_id = 'bybit'
+exchange_id = 'binanceusdm'
 exchange_class = getattr(ccxt, exchange_id)
 
 if exchange_id in inverse_exchanges:
@@ -11404,14 +11404,6 @@ clear_cnt = 0
 p_clear_cnt = 0
 ######################################################################################################################################################
 if exchange_id == 'binanceusdm':
-
-    try:
-        # 마진 모드 변경
-        margin_mode = 'CROSS'  # 'ISOLATED' 또는 'CROSS'
-        response = exchange.set_margin_mode(symbol=symbol, marginMode=margin_mode)
-    except Exception as e:
-        print("오류 발생:", str(e))
-
     # Set initial parameters
     # symbol = "RENUSDT"
     initial_leverage = 50  # Starting leverage
@@ -11439,21 +11431,13 @@ if exchange_id == 'binanceusdm':
     if c_l < min_leverage:
         print("Unable to set leverage within the allowed range.")
 elif exchange_id == 'bybit':
-
-    try:
-        # 마진 모드 변경
-        margin_mode = 'cross'  # 'ISOLATED' 또는 'CROSS'
-        response = exchange.set_margin_mode(symbol=l_s, marginMode=margin_mode)
-    except Exception as e:
-        print("오류 발생:", str(e))
-
     # Set initial parameters
     # symbol = "RENUSDT"
     initial_leverage = 50  # Starting leverage
     min_leverage = 1        # Minimum leverage to attempt
     c_l = initial_leverage
     t_s = 15
-
+    
     # Try setting leverage
     while c_l >= min_leverage:
         try:
@@ -11782,7 +11766,7 @@ while True:
                                 l_p_l, l_p_h, last_peaked_price = l_p_l_and_l_p_h_calc(symbol_ticker_last)
                                 stop_loss_, percentage_difference_stop_loss_, target_p_, percentage_difference_target_p_ = stop_loss_calc(stg_type, success, position_side, position_entry_price, symbol_ticker_last, close_price_low, close_price_high, pick_max, pick_min, stop_loss_range)
                                 if stop_loss_ < symbol_ticker_last: # 현재 포지가 long 일때
-                                    exchange.create_order(symbol=market_id, type='market', side='sell', amount=exit_order_position_amount, params={'stopPrice': stop_loss_, 'triggerDirection': 'below'}) # stop market 재생성
+                                    exchange.create_order(symbol=market_id, type='stop_market', side='sell', amount=exit_order_position_amount, params={'stopPrice': stop_loss_}) # stop market 재생성
                                     exit_status = '1-4-2. 역지'
                                     message = f'시간경과로 역지 재생성 하였습니다.'
                                     message += ' [2:1]: ' + str((pick_max - position_entry_price)/stopPrice_const) + ', 손절가: ' + str(position_entry_price - ((pick_max - position_entry_price)/stopPrice_const))
@@ -11810,7 +11794,7 @@ while True:
                                 l_p_l, l_p_h, last_peaked_price = l_p_l_and_l_p_h_calc(symbol_ticker_last)
                                 stop_loss_, percentage_difference_stop_loss_, target_p_, percentage_difference_target_p_ = stop_loss_calc(stg_type, success, position_side, position_entry_price, symbol_ticker_last, close_price_low, close_price_high, pick_max, pick_min, stop_loss_range)
                                 if stop_loss_ > symbol_ticker_last: # 현재 포지가 short 일때
-                                    exchange.create_order(symbol=market_id, type='market', side='buy', amount=exit_order_position_amount, params={'stopPrice': stop_loss_, 'triggerDirection': 'above'}) # stop market 재생성
+                                    exchange.create_order(symbol=market_id, type='stop_market', side='buy', amount=exit_order_position_amount, params={'stopPrice': stop_loss_}) # stop market 재생성
                                     exit_status = '1-4-8. 역지'
                                     message = f'시간경과로 역지 재생성 하였습니다.'
                                     message += '[2:1]: ' + str((position_entry_price - pick_min)/stopPrice_const) + ', 손절가: ' + str(position_entry_price + ((position_entry_price - pick_min)/stopPrice_const))
@@ -11898,9 +11882,9 @@ while True:
                             # and (df_15m.feature1.iloc[-1] > 0)
                             and (peaker_side == 'long')
                             and (peaker_option == 'forward')
-                            and (globals()['df_1m']['second_combined_diff_filtered'].iloc[-1] < 0.7)
-                            and (globals()['df_5m']['second_combined_diff_filtered'].iloc[-1] < 0.7)
-                            and ((globals()['df_15m']['second_combined_diff_filtered'].iloc[-1]) < 0.7)
+                            and (globals()['df_1m']['second_combined_diff_filtered'].iloc[-1] < 0.5)
+                            and (globals()['df_5m']['second_combined_diff_filtered'].iloc[-1] < 0.4)
+                            and ((globals()['df_15m']['second_combined_diff_filtered'].iloc[-1]) < 0.4)
                             # and (globals()['df_1m']['second_combined_diff_filtered_diff'].iloc[-1] > 0)
                             # and not ((df_1h['feature1'].iloc[-1] > 0) and (df_1h['feature1_diff'].iloc[-1] > 0))
                         )
@@ -11952,9 +11936,9 @@ while True:
                             (stg_type in ['stg1'])
                             and (peaker_side == 'long')
                             and (peaker_option == 'forward')
-                            and (globals()['df_1m']['second_combined_diff_filtered'].iloc[-1] < 0.7)
-                            and (globals()['df_5m']['second_combined_diff_filtered'].iloc[-1] < 0.7)
-                            and ((globals()['df_15m']['second_combined_diff_filtered'].iloc[-1]) < 0.7)
+                            and (globals()['df_1m']['second_combined_diff_filtered'].iloc[-1] < 0.5)
+                            and (globals()['df_5m']['second_combined_diff_filtered'].iloc[-1] < 0.4)
+                            and ((globals()['df_15m']['second_combined_diff_filtered'].iloc[-1]) < 0.4)
                             # and (globals()['df_15m']['second_combined_diff_filtered'].iloc[-1] < 0.3)
                             # and (globals()['df_4h']['second_combined_diff_filtered'].iloc[-1] < 0.3)
 
@@ -12017,9 +12001,9 @@ while True:
                             # and (position_size == 0)
                             and (peaker_side == 'long')
                             and (peaker_option == 'forward')
-                            and (globals()['df_1m']['second_combined_diff_filtered'].iloc[-1] < 0.7)
-                            and (globals()['df_5m']['second_combined_diff_filtered'].iloc[-1] < 0.7)
-                            and ((globals()['df_15m']['second_combined_diff_filtered'].iloc[-1]) < 0.7)
+                            and (globals()['df_1m']['second_combined_diff_filtered'].iloc[-1] < 0.5)
+                            and (globals()['df_5m']['second_combined_diff_filtered'].iloc[-1] < 0.4)
+                            and ((globals()['df_15m']['second_combined_diff_filtered'].iloc[-1]) < 0.4)
                             and (df_1m['RSI_14'].iloc[-1] < 70)
                             and (df_5m['RSI_14'].iloc[-1] < 70)
                             and (df_1m['macd_diff_35'].iloc[-3] > 0)
@@ -12141,7 +12125,7 @@ while True:
                                             l_p_l, l_p_h, last_peaked_price = l_p_l_and_l_p_h_calc(symbol_ticker_last)
                                             stop_loss_, percentage_difference_stop_loss_, target_p_, percentage_difference_target_p_ = stop_loss_calc(stg_type, success, position_side, position_entry_price, symbol_ticker_last, close_price_low, close_price_high, pick_max, pick_min, stop_loss_range)
                                             if stop_loss_ < symbol_ticker_last: # 현재 포지가 long 일때
-                                                exchange.create_order(symbol=market_id, type='market', side='sell', amount=exit_order_position_amount, params={'stopPrice': stop_loss_, 'triggerDirection': 'below'}) # stop market 재생성
+                                                exchange.create_order(symbol=market_id, type='stop_market', side='sell', amount=exit_order_position_amount, params={'stopPrice': stop_loss_}) # stop market 재생성
                                                 exit_status = '3-7. exit_order 재산출하여 + 역지'
                                                 message += f' 물타기 후 역지 재생성 하였습니다.'
                                                 message += ' [2:1]: ' + str((pick_max - position_entry_price)/2) + ', 손절가: ' + str(position_entry_price - ((pick_max - position_entry_price)/stopPrice_const))
@@ -12215,7 +12199,7 @@ while True:
                                     l_p_l, l_p_h, last_peaked_price = l_p_l_and_l_p_h_calc(symbol_ticker_last)
                                     stop_loss_, percentage_difference_stop_loss_, target_p_, percentage_difference_target_p_ = stop_loss_calc(stg_type, success, position_side, position_entry_price, symbol_ticker_last, close_price_low, close_price_high, pick_max, pick_min, stop_loss_range)
                                     if stop_loss_ < symbol_ticker_last: # 현재 포지가 long 일때
-                                        exchange.create_order(symbol=market_id, type='market', side='sell', amount=exit_order_position_amount, params={'stopPrice': stop_loss_, 'triggerDirection': 'below'}) # stop market 재생성
+                                        exchange.create_order(symbol=market_id, type='stop_market', side='sell', amount=exit_order_position_amount, params={'stopPrice': stop_loss_}) # stop market 재생성
                                         exit_status = '3-7. exit_order 재산출하여 + 역지'
                                         message += f'역지 생성 하였습니다.'
                                         message += ' [2:1]: ' + str((pick_max - position_entry_price)/stopPrice_const) + ', 손절가: ' + str(position_entry_price - ((pick_max - position_entry_price)/stopPrice_const))
@@ -12282,7 +12266,7 @@ while True:
                                 l_p_l, l_p_h, last_peaked_price = l_p_l_and_l_p_h_calc(symbol_ticker_last)
                                 stop_loss_, percentage_difference_stop_loss_, target_p_, percentage_difference_target_p_ = stop_loss_calc(stg_type, success, position_side, position_entry_price, symbol_ticker_last, close_price_low, close_price_high, pick_max, pick_min, stop_loss_range)
                                 if stop_loss_ < symbol_ticker_last: # 현재 포지가 long 일때
-                                    exchange.create_order(symbol=market_id, type='market', side='sell', amount=exit_order_position_amount, params={'stopPrice': stop_loss_, 'triggerDirection': 'below'}) # stop market 재생성
+                                    exchange.create_order(symbol=market_id, type='stop_market', side='sell', amount=exit_order_position_amount, params={'stopPrice': stop_loss_}) # stop market 재생성
                                     exit_status = '3-7. exit_order 재산출하여 + 역지'
                                     message += f'역지 생성 하였습니다.'
                                     message += ' [2:1]: ' + str((pick_max - position_entry_price)/stopPrice_const) + ', 손절가: ' + str(position_entry_price - ((pick_max - position_entry_price)/stopPrice_const))
@@ -12334,9 +12318,9 @@ while True:
                             # and (df_15m.feature1.iloc[-1] > 0)
                             and (peaker_side == 'short')
                             and (peaker_option == 'forward')
-                            and (globals()['df_1m']['second_combined_diff_filtered'].iloc[-1] > -0.7)
-                            and (globals()['df_5m']['second_combined_diff_filtered'].iloc[-1] > -0.7)
-                            and ((globals()['df_15m']['second_combined_diff_filtered'].iloc[-1]) > -0.7)
+                            and (globals()['df_1m']['second_combined_diff_filtered'].iloc[-1] > -0.5)
+                            and (globals()['df_5m']['second_combined_diff_filtered'].iloc[-1] > -0.4)
+                            and ((globals()['df_15m']['second_combined_diff_filtered'].iloc[-1]) > -0.4)
                             # and (globals()['df_1m']['second_combined_diff_filtered_diff'].iloc[-1] < 0)
                             # and not ((df_1h['feature1'].iloc[-1] > 0) and (df_1h['feature1_diff'].iloc[-1] > 0))
                         )
@@ -12389,9 +12373,9 @@ while True:
                             (stg_type in ['stg1'])
                             and (peaker_side == 'short')
                             and (peaker_option == 'forward')
-                            and (globals()['df_1m']['second_combined_diff_filtered'].iloc[-1] > -0.7)
-                            and (globals()['df_5m']['second_combined_diff_filtered'].iloc[-1] > -0.7)
-                            and ((globals()['df_15m']['second_combined_diff_filtered'].iloc[-1]) > -0.7)
+                            and (globals()['df_1m']['second_combined_diff_filtered'].iloc[-1] > -0.5)
+                            and (globals()['df_5m']['second_combined_diff_filtered'].iloc[-1] > -0.4)
+                            and ((globals()['df_15m']['second_combined_diff_filtered'].iloc[-1]) > -0.4)
                             # and (globals()['df_15m']['second_combined_diff_filtered'].iloc[-1] > -0.3)
                             # and (globals()['df_4h']['second_combined_diff_filtered'].iloc[-1] > -0.3)
 
@@ -12466,9 +12450,9 @@ while True:
                             # and (position_size == 0)
                             and (peaker_side == 'short')
                             and (peaker_option == 'forward')
-                            and (globals()['df_1m']['second_combined_diff_filtered'].iloc[-1] > -0.7)
-                            and (globals()['df_5m']['second_combined_diff_filtered'].iloc[-1] > -0.7)
-                            and ((globals()['df_15m']['second_combined_diff_filtered'].iloc[-1]) > -0.7)
+                            and (globals()['df_1m']['second_combined_diff_filtered'].iloc[-1] > -0.5)
+                            and (globals()['df_5m']['second_combined_diff_filtered'].iloc[-1] > -0.4)
+                            and ((globals()['df_15m']['second_combined_diff_filtered'].iloc[-1]) > -0.4)
                             and (df_1m['RSI_14'].iloc[-1] > 30)
                             and (df_5m['RSI_14'].iloc[-1] > 30)
                             and (df_1m['macd_diff_35'].iloc[-3] < 0)
@@ -12586,7 +12570,7 @@ while True:
                                             l_p_l, l_p_h, last_peaked_price = l_p_l_and_l_p_h_calc(symbol_ticker_last)
                                             stop_loss_, percentage_difference_stop_loss_, target_p_, percentage_difference_target_p_ = stop_loss_calc(stg_type, success, position_side, position_entry_price, symbol_ticker_last, close_price_low, close_price_high, pick_max, pick_min, stop_loss_range)
                                             if stop_loss_ > symbol_ticker_last: # 현재 포지가 short 일때
-                                                exchange.create_order(symbol=market_id, type='market', side='buy', amount=exit_order_position_amount, params={'stopPrice': stop_loss_, 'triggerDirection': 'above'}) # stop market 재생성
+                                                exchange.create_order(symbol=market_id, type='stop_market', side='buy', amount=exit_order_position_amount, params={'stopPrice': stop_loss_}) # stop market 재생성
                                                 exit_status = '8-7. exit_order 재산출하여 + 역지'
                                                 message += f' 물타기 후 역지 재생성 하였습니다.'
                                                 message += '[2:1]: ' + str((position_entry_price - pick_min)/2) + ', 손절가: ' + str(position_entry_price + ((position_entry_price - pick_min)/stopPrice_const))
@@ -12661,7 +12645,7 @@ while True:
                                     l_p_l, l_p_h, last_peaked_price = l_p_l_and_l_p_h_calc(symbol_ticker_last)
                                     stop_loss_, percentage_difference_stop_loss_, target_p_, percentage_difference_target_p_ = stop_loss_calc(stg_type, success, position_side, position_entry_price, symbol_ticker_last, close_price_low, close_price_high, pick_max, pick_min, stop_loss_range)
                                     if stop_loss_ > symbol_ticker_last: # 현재 포지가 short 일때
-                                        exchange.create_order(symbol=market_id, type='market', side='buy', amount=exit_order_position_amount, params={'stopPrice': stop_loss_, 'triggerDirection': 'above'}) # stop market 재생성
+                                        exchange.create_order(symbol=market_id, type='stop_market', side='buy', amount=exit_order_position_amount, params={'stopPrice': stop_loss_}) # stop market 재생성
                                         exit_status = '8-7. exit_order 재산출하여 + 역지'
                                         message += f' 역지 생성 하였습니다.'
                                         message += '[2:1]: ' + str((position_entry_price - pick_min)/stopPrice_const) + ', 손절가: ' + str(position_entry_price + ((position_entry_price - pick_min)/stopPrice_const))
@@ -12738,7 +12722,7 @@ while True:
                                 l_p_l, l_p_h, last_peaked_price = l_p_l_and_l_p_h_calc(symbol_ticker_last)
                                 stop_loss_, percentage_difference_stop_loss_, target_p_, percentage_difference_target_p_ = stop_loss_calc(stg_type, success, position_side, position_entry_price, symbol_ticker_last, close_price_low, close_price_high, pick_max, pick_min, stop_loss_range)
                                 if stop_loss_ > symbol_ticker_last: # 현재 포지가 short 일때
-                                    exchange.create_order(symbol=market_id, type='market', side='buy', amount=exit_order_position_amount, params={'stopPrice': stop_loss_, 'triggerDirection': 'above'}) # stop market 재생성
+                                    exchange.create_order(symbol=market_id, type='stop_market', side='buy', amount=exit_order_position_amount, params={'stopPrice': stop_loss_}) # stop market 재생성
                                     exit_status = '8-7. exit_order 재산출하여 + 역지'
                                     message += f' 역지 생성 하였습니다.'
                                     message += '[2:1]: ' + str((position_entry_price - pick_min)/stopPrice_const) + ', 손절가: ' + str(position_entry_price + ((position_entry_price - pick_min)/stopPrice_const))
