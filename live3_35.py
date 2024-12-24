@@ -2760,7 +2760,7 @@ def peak_calc(market_id, intervals): # df_1m, df_3m, df_5m, df_15m, df_30m, df_1
 
                 # 저장된 모델 불러오기
                 # print(interval)
-                loaded_autoencoder = load_model("model_1.h5")
+                loaded_autoencoder = load_model("/aws/engin1/model_1.h5")
                 
                 # loaded_autoencoder.compile(loss="mse", optimizer="adam", metrics=["accuracy"])
                 # Compile the model (assuming you have defined loss and optimizer during training)
