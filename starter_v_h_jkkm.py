@@ -1809,33 +1809,11 @@ while True:
 
 
 
-        # for key, value in markets_to_start.items():
-        #     cmd = "nohup python3 " + key + " " + value + " {0} >/dev/null 2>&1 &"
-        #     subprocess.Popen(cmd, shell=True)
-        #     print(f"{key}, {value}: has started")
-        #     send_to_telegram(f"{key}, {value}: has started")
-
-
         for key, value in markets_to_start.items():
-            # 로그 파일 경로 설정
-            log_file = f"/aws/engin1/{key.split('/')[-1]}.log"
-            
-            # 실행할 명령어 생성
-            cmd = f"nohup python3 {key} {value} {{0}} > {log_file} 2>&1 &"
-            
-            # 로그 파일에 명령어 기록
-            with open(log_file, "a") as log:
-                log.write(f"Executing: {cmd}\n")
-            
-            # 명령어 실행
+            cmd = "nohup python3 " + key + " " + value + " {0} >/dev/null 2>&1 &"
             subprocess.Popen(cmd, shell=True)
-            
             print(f"{key}, {value}: has started")
             send_to_telegram(f"{key}, {value}: has started")
-
-
-
-
     else:
         print(f"currently open position is over {open_positions_count}, no more new engin trying!")
         send_to_telegram(f"currently open position is over {open_positions_count}, no more new engin trying!")
