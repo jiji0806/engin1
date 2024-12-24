@@ -994,19 +994,19 @@ else:
 markets = exchange.load_markets()
 
 running_markets = {
-    'live3_34.py': '',
-    'live3_35.py': '',
-    'live3_36.py': '',
-    'live3_37.py': ''
+    '/aws/engin1/live3_34.py': '',
+    '/aws/engin1/live3_35.py': '',
+    '/aws/engin1/live3_36.py': '',
+    '/aws/engin1/live3_37.py': ''
     # 'live3_8.py': ''
     # 'live3_9.py': ''
 }
 
 base_markets = {
-    'live3_34.py': '',
-    'live3_35.py': '',
-    'live3_36.py': '',
-    'live3_37.py': ''
+    '/aws/engin1/live3_34.py': '',
+    '/aws/engin1/live3_35.py': '',
+    '/aws/engin1/live3_36.py': '',
+    '/aws/engin1/live3_37.py': ''
     # 'live3_8.py': ''
     # 'live3_9.py': ''
 }
