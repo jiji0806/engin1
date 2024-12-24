@@ -1818,7 +1818,7 @@ while True:
 
         for key, value in markets_to_start.items():
             # 로그 파일 경로 설정
-            log_file = f"/aws/engin/{key.split('/')[-1]}.log"
+            log_file = f"/aws/engin1/{key.split('/')[-1]}.log"
             
             # 실행할 명령어 생성
             cmd = f"nohup python3 {key} {value} {{0}} > {log_file} 2>&1 &"
