@@ -930,6 +930,63 @@ def exit_order_position_amount_calc(position_size):
 
 
 
+def calculate_predicted_change(symbol_):
+    # 1. 데이터 가져오기
+    df = klines(symbol=symbol_, interval='1d', limit=2)
+
+    # 2. 전날 데이터
+    low_yesterday = df['low'][-2]
+    high_yesterday = df['high'][-2]
+    Volume_yesterday = df['volume'][-2]
+    Change_yesterday = ((high_yesterday - low_yesterday) / low_yesterday) * 100  # 전날 변동성 (%)
+    C_yesterday = Change_yesterday / Volume_yesterday  # 전날 변동 상수
+
+    # 3. 오늘 데이터 (현재까지)
+    low_today = df['low'][-1]
+    high_today = df['high'][-1]
+    Volume_today_so_far = df['volume'][-1]
+    Change_today_so_far = ((high_today - low_today) / low_today) * 100  # 현재까지의 변동성 (%)
+    C_today = Change_today_so_far / Volume_today_so_far  # 현재까지의 변동 상수
+
+    ##########################################################################################
+    # # 4. 오늘 최종 거래량 (예측 또는 마감 시점 데이터)
+    # # 현재 시간을 UTC 기준으로 설정
+    # current_time_utc = datetime.datetime.utcnow()  # UTC 기준 현재 시간
+
+    # # CME 정규 거래 시작 시간 (UTC)
+    # cme_open_time_utc = current_time_utc.replace(hour=14, minute=30, second=0, microsecond=0)
+
+    # # 만약 시간이 이미 시작 시간 이전이라면, 남은 시간을 24시간 기준으로 설정
+    # if current_time_utc < cme_open_time_utc:
+    #     remaining_time_utc = (cme_open_time_utc - current_time_utc).total_seconds() / 3600  # 남은 시간 (단위: 시간)
+    # else:
+    #     remaining_time_utc = 24 - (current_time_utc - cme_open_time_utc).total_seconds() / 3600  # 남은 시간 (24시간 기준)
+
+    ##########################################################################################
+    # 5. 오늘 최종 거래량 (예측 또는 마감 시점 데이터)
+    # 현재 시간을 UTC 기준으로 설정
+    current_time_utc = datetime.datetime.utcnow()  # UTC 기준 현재 시간
+    midnight_utc = current_time_utc.replace(hour=0, minute=0, second=0, microsecond=0) + datetime.timedelta(days=1)  # 다음날 UTC 자정 시간
+    remaining_time_utc = (midnight_utc - current_time_utc).total_seconds() / 3600  # 남은 시간 (단위: 시간)
+    ##########################################################################################
+
+    # 거래량 예측: 현재까지 거래량 * 남은 시간 비율로 조정
+    # Volume_today_final = Volume_today_so_far * (1 + remaining_time_utc / 24)  # 남은 시간을 반영한 거래량 예측
+    Volume_today_final = (Volume_today_so_far * 24) / (24 - remaining_time_utc)
+
+    ##########################################################################################
+    # # 6. 오늘 최종 변동성 예측
+    Predicted_Change_today = C_today * Volume_today_final
+    print(C_today)
+    print(Predicted_Change_today)
+
+
+
+    # Volume_prediction_1 = Change_yesterday/C_today
+    # Predicted_Change_today = Volume_prediction_1 * C_today
+    ##########################################################################################
+
+    return Predicted_Change_today
 
 
 
@@ -1062,6 +1119,7 @@ while True:
                     # ticker_data = exchange.fetch_ticker(symbol)
                     # percentage_change = ticker_data['percentage']
 
+                    predicted_change = calculate_predicted_change(symbol)
 
 
 
@@ -1229,6 +1287,8 @@ while True:
                                     (globals()['df_15m']['ADX_200'].count() > 500)
                                         and
                                     ((globals()['df_15m']['combined_diff_filtered_diff'].iloc[-1]) > 0)
+                                        and
+                                    (predicted_change < 30)
 
 
 

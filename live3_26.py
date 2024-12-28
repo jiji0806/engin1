@@ -2760,7 +2760,7 @@ def peak_calc(market_id, intervals): # df_1m, df_3m, df_5m, df_15m, df_30m, df_1
 
                 # 저장된 모델 불러오기
                 # print(interval)
-                loaded_autoencoder = load_model("model_1.h5")
+                loaded_autoencoder = load_model("/aws/engin1/model_1.h5")
                 
                 # loaded_autoencoder.compile(loss="mse", optimizer="adam", metrics=["accuracy"])
                 # Compile the model (assuming you have defined loss and optimizer during training)
@@ -11474,8 +11474,12 @@ elif exchange_id == 'bybit':
 market_max_leverage = c_l  # c_l이 이미 마켓에서 허용하는 최대 레버리지
 ######################################################################################################################################################
 predicted_change = calculate_predicted_change(market_id)
-max_leverage = calculate_max_leverage(predicted_change, market_max_leverage)*3
-lev_limit = calculate_max_leverage(predicted_change, market_max_leverage)*3
+if predicted_change < 8:
+    max_leverage = calculate_max_leverage(predicted_change, market_max_leverage)*3
+    lev_limit = calculate_max_leverage(predicted_change, market_max_leverage)*3
+else:
+    max_leverage = calculate_max_leverage(predicted_change, market_max_leverage)
+    lev_limit = calculate_max_leverage(predicted_change, market_max_leverage)
 r = 1.6
 stopPrice_const = 2
 atr_const = 0.7 # 70%
@@ -11611,8 +11615,12 @@ while True:
         open_order_counter, open_order_side, open_order_size, open_order_price, open_order_type, stop_market_counter = open_order_calc(exchange_id, market_id) # exit_order check
         exit_order_position_amount = exit_order_position_amount_calc(position_size)
         predicted_change = calculate_predicted_change(market_id)
-        max_leverage = calculate_max_leverage(predicted_change, market_max_leverage)*3
-        lev_limit = calculate_max_leverage(predicted_change, market_max_leverage)*3
+        if predicted_change < 8:
+            max_leverage = calculate_max_leverage(predicted_change, market_max_leverage)*3
+            lev_limit = calculate_max_leverage(predicted_change, market_max_leverage)*3
+        else:
+            max_leverage = calculate_max_leverage(predicted_change, market_max_leverage)
+            lev_limit = calculate_max_leverage(predicted_change, market_max_leverage)
         wallet_balance = balance_calc(exchange_id, balance_currency)
         scale_order_position_amount_calc_val = scale_order_position_amount_calc(min_order_amount, wallet_balance, max_leverage, position_size, r, scale_order_max_limit)
         initial_order_amount = scale_order_position_amount_calc_val[1]
