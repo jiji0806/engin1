@@ -21,3 +21,10 @@ starter_v_h_bybit_mj.py
 find . -name "*Zone.Identifier" -type f -delete
 
 git clone git@github.com:jiji0806/engin1.git
+
+요약
+------------------------------------------------------------
+ssh-keygen -f "/root/.ssh/known_hosts" -R "43.200.102.133"
+ssh -i "/root/12-16-2024-ourcoffeeforyouj.pem" -o StrictHostKeyChecking=no ubuntu@43.200.102.133
+docker exec -it worldengin_container /bin/bash
+watch -n 1 'ps -ef | grep live'
