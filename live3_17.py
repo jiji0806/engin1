@@ -1475,7 +1475,7 @@ def db_insert(trader_name, exchange_id, market_id, volatility_macro_state, volat
 def check_pointer(trader_name, exchange_id, market_id, balance_currency, loop, max_waiting_in_second, exit_status, message):
     wallet_balance = balance_calc(exchange_id, balance_currency)
     position_side, position_size, position_value, position_entry_price, position_entry_time, liquidation_price, unrealised_pnl, roe_pcnt = position_calc(exchange_id, market_id)
-    interval_, side_, last_time_, big_boss_trend_checker = big_boss_trend_re(symbol, globals()['valid_intervals'])
+    interval_, side_, last_time_, big_boss_trend_checker = big_boss_trend_re_2(symbol, globals()['valid_intervals'])
 
     scaled_level_n = scale_order_position_amount_calc(min_order_amount, wallet_balance, max_leverage, position_size, r, scale_order_max_limit)[3]
     open_order_counter, open_order_side, open_order_size, open_order_price, open_order_type, stop_market_counter = open_order_calc(exchange_id, market_id)
@@ -9596,7 +9596,7 @@ def big_boss_trend_re_2(market_id, intervals):
     """
     가장 최근에 생긴 pick의  interval_, 방향, 확인
     """
-    interval_not_in_big_boss_trend = ['30m', '1h', '2h', '4h']
+    interval_not_in_big_boss_trend = ['15m', '30m', '1h', '2h', '4h']
     # interval_ = side_ = last_time_ = big_boss_trend_checker_ = ''
     # latest_non_zero = interval_ = side_= last_time_ = None  # Initialize latest_non_zero
     latest_non_zero = interval_ = side_= side= last_time_ = None  # Initialize latest_non_zero
@@ -11203,8 +11203,8 @@ def calculate_max_leverage(predicted_change, market_max_leverage, max_leverage=1
     # 변동성 제한
     if predicted_change < 1:
         predicted_change = 1  # 최소 변동성 1%로 고정
-    elif predicted_change > 100:
-        predicted_change = 100  # 최대 변동성 100%로 고정
+    # elif predicted_change > 100:
+    #     predicted_change = 100  # 최대 변동성 100%로 고정
 
     # 안전 마진 설정
     safety_margin = 1.5  # 예상 변동성 대비 여유 배수
@@ -11405,19 +11405,20 @@ p_clear_cnt = 0
 ######################################################################################################################################################
 if exchange_id == 'binanceusdm':
 
-    try:
-        # 마진 모드 변경
-        margin_mode = 'CROSS'  # 'ISOLATED' 또는 'CROSS'
-        response = exchange.set_margin_mode(symbol=symbol, marginMode=margin_mode)
-    except Exception as e:
-        print("오류 발생:", str(e))
-
     # Set initial parameters
     # symbol = "RENUSDT"
     initial_leverage = 50  # Starting leverage
     min_leverage = 1        # Minimum leverage to attempt
     c_l = initial_leverage
     t_s = 15
+
+    try:
+        # 마진 모드 변경
+        margin_mode = 'CROSS'  # 'ISOLATED' 또는 'CROSS'
+        response = exchange.set_margin_mode(symbol=symbol, marginMode=margin_mode)
+    except Exception as e:
+        print("오류 발생:", str(e))
+        time.sleep(t_s)
 
     # Try setting leverage
     while c_l >= min_leverage:
@@ -11440,19 +11441,20 @@ if exchange_id == 'binanceusdm':
         print("Unable to set leverage within the allowed range.")
 elif exchange_id == 'bybit':
 
-    try:
-        # 마진 모드 변경
-        margin_mode = 'cross'  # 'ISOLATED' 또는 'CROSS'
-        response = exchange.set_margin_mode(symbol=l_s, marginMode=margin_mode)
-    except Exception as e:
-        print("오류 발생:", str(e))
-
     # Set initial parameters
     # symbol = "RENUSDT"
     initial_leverage = 50  # Starting leverage
     min_leverage = 1        # Minimum leverage to attempt
     c_l = initial_leverage
     t_s = 15
+
+    try:
+        # 마진 모드 변경
+        margin_mode = 'cross'  # 'ISOLATED' 또는 'CROSS'
+        response = exchange.set_margin_mode(symbol=l_s, marginMode=margin_mode)
+    except Exception as e:
+        print("오류 발생:", str(e))
+        time.sleep(t_s)
 
     # Try setting leverage
     while c_l >= min_leverage:
@@ -11475,12 +11477,12 @@ market_max_leverage = c_l  # c_l이 이미 마켓에서 허용하는 최대 레�
 ######################################################################################################################################################
 predicted_change = calculate_predicted_change(market_id)
 if predicted_change < 8:
-    max_leverage = calculate_max_leverage(predicted_change, market_max_leverage)*3
-    lev_limit = calculate_max_leverage(predicted_change, market_max_leverage)*3
+    max_leverage = calculate_max_leverage(predicted_change, market_max_leverage)
+    lev_limit = calculate_max_leverage(predicted_change, market_max_leverage)
 else:
     max_leverage = calculate_max_leverage(predicted_change, market_max_leverage)
     lev_limit = calculate_max_leverage(predicted_change, market_max_leverage)
-r = 1.6
+r = 1.4
 stopPrice_const = 2
 atr_const = 0.7 # 70%
 atr_const2 = .87 # 100%
@@ -11616,8 +11618,8 @@ while True:
         exit_order_position_amount = exit_order_position_amount_calc(position_size)
         predicted_change = calculate_predicted_change(market_id)
         if predicted_change < 8:
-            max_leverage = calculate_max_leverage(predicted_change, market_max_leverage)*3
-            lev_limit = calculate_max_leverage(predicted_change, market_max_leverage)*3
+            max_leverage = calculate_max_leverage(predicted_change, market_max_leverage)
+            lev_limit = calculate_max_leverage(predicted_change, market_max_leverage)
         else:
             max_leverage = calculate_max_leverage(predicted_change, market_max_leverage)
             lev_limit = calculate_max_leverage(predicted_change, market_max_leverage)
@@ -11906,9 +11908,9 @@ while True:
                             # and (df_15m.feature1.iloc[-1] > 0)
                             and (peaker_side == 'long')
                             and (peaker_option == 'forward')
-                            # and (globals()['df_1m']['second_combined_diff_filtered'].iloc[-1] < 0.7)
-                            # and (globals()['df_5m']['second_combined_diff_filtered'].iloc[-1] < 0.7)
-                            # and ((globals()['df_15m']['second_combined_diff_filtered'].iloc[-1]) < 0.7)
+                            and (globals()['df_1m']['second_combined_diff_filtered'].iloc[-1] < 0.5)
+                            and (globals()['df_5m']['second_combined_diff_filtered'].iloc[-1] < 0.4)
+                            and ((globals()['df_15m']['second_combined_diff_filtered'].iloc[-1]) < 0.4)
                             # and (globals()['df_1m']['second_combined_diff_filtered_diff'].iloc[-1] > 0)
                             # and not ((df_1h['feature1'].iloc[-1] > 0) and (df_1h['feature1_diff'].iloc[-1] > 0))
                         )
@@ -11960,9 +11962,9 @@ while True:
                             (stg_type in ['stg1'])
                             and (peaker_side == 'long')
                             and (peaker_option == 'forward')
-                            # and (globals()['df_1m']['second_combined_diff_filtered'].iloc[-1] < 0.7)
-                            # and (globals()['df_5m']['second_combined_diff_filtered'].iloc[-1] < 0.7)
-                            # and ((globals()['df_15m']['second_combined_diff_filtered'].iloc[-1]) < 0.7)
+                            and (globals()['df_1m']['second_combined_diff_filtered'].iloc[-1] < 0.5)
+                            and (globals()['df_5m']['second_combined_diff_filtered'].iloc[-1] < 0.4)
+                            and ((globals()['df_15m']['second_combined_diff_filtered'].iloc[-1]) < 0.4)
                             # and (globals()['df_15m']['second_combined_diff_filtered'].iloc[-1] < 0.3)
                             # and (globals()['df_4h']['second_combined_diff_filtered'].iloc[-1] < 0.3)
 
@@ -12025,9 +12027,9 @@ while True:
                             # and (position_size == 0)
                             and (peaker_side == 'long')
                             and (peaker_option == 'forward')
-                            # and (globals()['df_1m']['second_combined_diff_filtered'].iloc[-1] < 0.7)
-                            # and (globals()['df_5m']['second_combined_diff_filtered'].iloc[-1] < 0.7)
-                            # and ((globals()['df_15m']['second_combined_diff_filtered'].iloc[-1]) < 0.7)
+                            and (globals()['df_1m']['second_combined_diff_filtered'].iloc[-1] < 0.5)
+                            and (globals()['df_5m']['second_combined_diff_filtered'].iloc[-1] < 0.4)
+                            and ((globals()['df_15m']['second_combined_diff_filtered'].iloc[-1]) < 0.4)
                             and (df_1m['RSI_14'].iloc[-1] < 70)
                             and (df_5m['RSI_14'].iloc[-1] < 70)
                             and (df_1m['macd_diff_35'].iloc[-3] > 0)
@@ -12342,9 +12344,9 @@ while True:
                             # and (df_15m.feature1.iloc[-1] > 0)
                             and (peaker_side == 'short')
                             and (peaker_option == 'forward')
-                            # and (globals()['df_1m']['second_combined_diff_filtered'].iloc[-1] > -0.7)
-                            # and (globals()['df_5m']['second_combined_diff_filtered'].iloc[-1] > -0.7)
-                            # and ((globals()['df_15m']['second_combined_diff_filtered'].iloc[-1]) > -0.7)
+                            and (globals()['df_1m']['second_combined_diff_filtered'].iloc[-1] > -0.5)
+                            and (globals()['df_5m']['second_combined_diff_filtered'].iloc[-1] > -0.4)
+                            and ((globals()['df_15m']['second_combined_diff_filtered'].iloc[-1]) > -0.4)
                             # and (globals()['df_1m']['second_combined_diff_filtered_diff'].iloc[-1] < 0)
                             # and not ((df_1h['feature1'].iloc[-1] > 0) and (df_1h['feature1_diff'].iloc[-1] > 0))
                         )
@@ -12397,9 +12399,9 @@ while True:
                             (stg_type in ['stg1'])
                             and (peaker_side == 'short')
                             and (peaker_option == 'forward')
-                            # and (globals()['df_1m']['second_combined_diff_filtered'].iloc[-1] > -0.7)
-                            # and (globals()['df_5m']['second_combined_diff_filtered'].iloc[-1] > -0.7)
-                            # and ((globals()['df_15m']['second_combined_diff_filtered'].iloc[-1]) > -0.7)
+                            and (globals()['df_1m']['second_combined_diff_filtered'].iloc[-1] > -0.5)
+                            and (globals()['df_5m']['second_combined_diff_filtered'].iloc[-1] > -0.4)
+                            and ((globals()['df_15m']['second_combined_diff_filtered'].iloc[-1]) > -0.4)
                             # and (globals()['df_15m']['second_combined_diff_filtered'].iloc[-1] > -0.3)
                             # and (globals()['df_4h']['second_combined_diff_filtered'].iloc[-1] > -0.3)
 
@@ -12474,9 +12476,9 @@ while True:
                             # and (position_size == 0)
                             and (peaker_side == 'short')
                             and (peaker_option == 'forward')
-                            # and (globals()['df_1m']['second_combined_diff_filtered'].iloc[-1] > -0.7)
-                            # and (globals()['df_5m']['second_combined_diff_filtered'].iloc[-1] > -0.7)
-                            # and ((globals()['df_15m']['second_combined_diff_filtered'].iloc[-1]) > -0.7)
+                            and (globals()['df_1m']['second_combined_diff_filtered'].iloc[-1] > -0.5)
+                            and (globals()['df_5m']['second_combined_diff_filtered'].iloc[-1] > -0.4)
+                            and ((globals()['df_15m']['second_combined_diff_filtered'].iloc[-1]) > -0.4)
                             and (df_1m['RSI_14'].iloc[-1] > 30)
                             and (df_5m['RSI_14'].iloc[-1] > 30)
                             and (df_1m['macd_diff_35'].iloc[-3] < 0)

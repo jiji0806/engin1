@@ -144,7 +144,7 @@ interval = '1m'
 # intervals = [] # cumulate_lv_calc 에 사용
 # intervals = cpu['info']['itvs']
 # intervals = ['1m', '5m', '15m', '30m', '1h', '2h', '4h', '6h', '8h']
-intervals = ['1m', '5m', '15m']
+intervals = ['1m', '5m', '15m', '1h']
 # intervals = ['1m', '15m']
 valid_intervals = []
 # intervals = ['1m', '5m', '15m', '1h']
@@ -1475,7 +1475,7 @@ def db_insert(trader_name, exchange_id, market_id, volatility_macro_state, volat
 def check_pointer(trader_name, exchange_id, market_id, balance_currency, loop, max_waiting_in_second, exit_status, message):
     wallet_balance = balance_calc(exchange_id, balance_currency)
     position_side, position_size, position_value, position_entry_price, position_entry_time, liquidation_price, unrealised_pnl, roe_pcnt = position_calc(exchange_id, market_id)
-    interval_, side_, last_time_, big_boss_trend_checker = big_boss_trend_re(symbol, globals()['valid_intervals'])
+    interval_, side_, last_time_, big_boss_trend_checker = big_boss_trend_re_2(symbol, globals()['valid_intervals'])
 
     scaled_level_n = scale_order_position_amount_calc(min_order_amount, wallet_balance, max_leverage, position_size, r, scale_order_max_limit)[3]
     open_order_counter, open_order_side, open_order_size, open_order_price, open_order_type, stop_market_counter = open_order_calc(exchange_id, market_id)
@@ -3715,7 +3715,7 @@ def peak_calc(market_id, intervals): # df_1m, df_3m, df_5m, df_15m, df_30m, df_1
                                     & (df['second_combined_diff'] < df['second_combined_diff'].quantile(0.5))
                                     & (df.MACDh_12_26_9 > 0)
                                     & (df['second_combined_diff_filtered_diff'] > 0)
-                                    & (df['second_combined_diff_diff'] > 0)
+                                    & (df['second_combined_diff_diff'] < 0)
                                     # & (df.minima_peak_x_close > 0)
                                 )
                             )
@@ -3729,13 +3729,13 @@ def peak_calc(market_id, intervals): # df_1m, df_3m, df_5m, df_15m, df_30m, df_1
                                     (df['second_combined_diff_filtered'] < -0.6)
                                     # & 
                                     # (df.RSI_14 < 30)
-                                    & (df.MACDh_12_26_9 > 0)
+                                    # & (df.MACDh_12_26_9 > 0)
                                 )
-                                    | 
-                                (
-                                    (df['combined_diff_filtered_diff'] > 0)
-                                    & (df['combined_diff_filtered'] < 0.3)
-                                )
+                                #     | 
+                                # (
+                                #     (df['combined_diff_filtered_diff'] > 0)
+                                #     & (df['combined_diff_filtered'] < 0.3)
+                                # )
                                 # # (
                                 # #     (df['combined_diff_filtered_diff'] > 0)
                                 # #     & (df['combined_diff_filtered'] < 0.2)
@@ -3750,7 +3750,7 @@ def peak_calc(market_id, intervals): # df_1m, df_3m, df_5m, df_15m, df_30m, df_1
                             (df['anomalies_MACD_50_75_35'] > 0) 
                             & (df['MACD_50_75_35'] < df['MACD_50_75_35'].quantile(0.5))
                             & (df['second_combined_diff_filtered_diff'] > 0)
-                            & (df['second_combined_diff_diff'] > 0)
+                            & (df['second_combined_diff_diff'] < 0)
                             # & (df.MACDh_12_26_9 > 0)
                             # & (df.minima_peak_x_close > 0)
                         )
@@ -3766,7 +3766,7 @@ def peak_calc(market_id, intervals): # df_1m, df_3m, df_5m, df_15m, df_30m, df_1
                                     & (df['second_combined_diff'] > df['second_combined_diff'].quantile(0.5))
                                     & (df.MACDh_12_26_9 < 0)
                                     & (df['second_combined_diff_filtered_diff'] < 0)
-                                    & (df['second_combined_diff_diff'] < 0)
+                                    & (df['second_combined_diff_diff'] > 0)
                                     # & (df.maxima_peak_x_close < 0)
                                 )
                             )
@@ -3780,13 +3780,13 @@ def peak_calc(market_id, intervals): # df_1m, df_3m, df_5m, df_15m, df_30m, df_1
                                     (df['second_combined_diff_filtered'] > 0.6)
                                     # & 
                                     # (df.RSI_14 > 70)
-                                    & (df.MACDh_12_26_9 < 0)
+                                    # & (df.MACDh_12_26_9 < 0)
                                 )
-                                    | 
-                                (
-                                    (df['combined_diff_filtered_diff'] > 0)
-                                    & (df['combined_diff_filtered'] < 0.3)
-                                )
+                                #     | 
+                                # (
+                                #     (df['combined_diff_filtered_diff'] > 0)
+                                #     & (df['combined_diff_filtered'] < 0.3)
+                                # )
                                 # # (
                                 # #     (df['combined_diff_filtered_diff'] > 0)
                                 # #     & (df['combined_diff_filtered'] < 0.2)
@@ -3801,7 +3801,7 @@ def peak_calc(market_id, intervals): # df_1m, df_3m, df_5m, df_15m, df_30m, df_1
                             (df['anomalies_MACD_50_75_35'] > 0) 
                             & (df['MACD_50_75_35'] > df['MACD_50_75_35'].quantile(0.5))
                             & (df['second_combined_diff_filtered_diff'] < 0)
-                            & (df['second_combined_diff_diff'] < 0)
+                            & (df['second_combined_diff_diff'] > 0)
                             # & (df.MACDh_12_26_9 < 0)
                             # & (df.maxima_peak_x_close < 0)
                         )
@@ -4075,13 +4075,15 @@ def peak_calc(market_id, intervals): # df_1m, df_3m, df_5m, df_15m, df_30m, df_1
                             (
                                 (df['combined_diff_filtered_diff'] > 0)
                                 &
-                                (df['combined_diff'] > 0)
-                                # &
-                                # (
-                                #     (df['combined_diff_filtered'] < 0.2)
-                                #     #     |
-                                #     # (df['combined_diff_filtered'] > 0.35)
-                                # )
+                                (df['combined_diff_diff'] > 0)
+                                &
+                                (
+                                    (df['combined_diff_filtered'] < 0.2)
+                                    &
+                                    (df['combined_diff'] < 0.2)
+                                    #     |
+                                    # (df['combined_diff_filtered'] > 0.35)
+                                )
                                 &
                                 (df['second_combined_diff_filtered'] < 0.5)
                                 &
@@ -4112,10 +4114,14 @@ def peak_calc(market_id, intervals): # df_1m, df_3m, df_5m, df_15m, df_30m, df_1
                         )
                             &
                         (df['second_combined_diff_filtered_diff'] > 0)
-                            &
-                        (df['second_combined_diff_diff'] > 0)
+                        #     &
+                        # (df['second_combined_diff_diff'] > 0)
                         # (df.minima_peak_x_close > 0)
                     )
+                    # |
+                    # (
+                    #     (df['RSI_14'] < 25)
+                    # )
                     # &~(
                     #     # (df.maxima_peak_x_macd < 0) | (df.maxima_peak_x_rsi < 0) | (df.maxima_peak_x_macd.shift(1) < 0) 
                     #     # | (df.maxima_peak_x_rsi.shift(1) < 0)
@@ -4130,13 +4136,15 @@ def peak_calc(market_id, intervals): # df_1m, df_3m, df_5m, df_15m, df_30m, df_1
                             (
                                 (df['combined_diff_filtered_diff'] > 0)
                                 &
-                                (df['combined_diff'] > 0)
-                                # &
-                                # (
-                                #     (df['combined_diff_filtered'] < 0.2)
-                                #     #     |
-                                #     # (df['combined_diff_filtered'] > 0.35)
-                                # )
+                                (df['combined_diff_diff'] > 0)
+                                &
+                                (
+                                    (df['combined_diff_filtered'] < 0.2)
+                                    &
+                                    (df['combined_diff'] < 0.2)
+                                    #     |
+                                    # (df['combined_diff_filtered'] > 0.35)
+                                )
                                 &
                                 (df['second_combined_diff_filtered'] > -0.5)
                                 &
@@ -4167,10 +4175,14 @@ def peak_calc(market_id, intervals): # df_1m, df_3m, df_5m, df_15m, df_30m, df_1
                         )
                                 &
                             (df['second_combined_diff_filtered_diff'] < 0)
-                                &
-                            (df['second_combined_diff_diff'] < 0)
+                            #     &
+                            # (df['second_combined_diff_diff'] < 0)
                             # (df.maxima_peak_x_close < 0)
                     )
+                    # |
+                    # (
+                    #     (df['RSI_14'] > 75)
+                    # )
                     # &~(
                     #     # (df.minima_peak_x_macd > 0) | (df.minima_peak_x_rsi > 0) | (df.minima_peak_x_macd.shift(1) > 0) 
                     #     # | (df.minima_peak_x_rsi.shift(1) > 0)
@@ -4231,43 +4243,95 @@ def peak_calc(market_id, intervals): # df_1m, df_3m, df_5m, df_15m, df_30m, df_1
 
                 df.loc[
                     (
-                        # (df.minima_peak_x_MACD_12_26_9 > 0) # | 
-                        (df.minima_peak_x_MACD_50_75_35 > 0)
-                        &
-                        (df['combined_diff_filtered_diff'] > 0)
-                        # &
-                        # (df['combined_diff_filtered'] < 0.2)
-                        # &
-                        # (df['combined_diff_filtered'] > 0.15)
-                        # &
-                        # # (df['second_combined_diff_filtered'] < 0)
-                        &
-                        (df['second_combined_diff_filtered_diff'] > 0)
-                        # &
-                        # (df['second_combined_diff_diff'] < 0)
-                        # &
-                        # (df['second_combined_diff_filtered'] < 0.3)
+                        (
+                            # (df.minima_peak_x_MACD_12_26_9 > 0) # | 
+                            (df.minima_peak_x_MACD_50_75_35 > 0)
+                            &
+                            (df['combined_diff_diff'] > 0)
+                            # &
+                            # (df['combined_diff_filtered'] < 0.2)
+                            # &
+                            # (df['combined_diff_filtered'] > 0.15)
+                            # &
+                            # # (df['second_combined_diff_filtered'] < 0)
+                            &
+                            (df['second_combined_diff_diff'] > 0)
+                            # &
+                            # (df['second_combined_diff_diff'] < 0)
+                            # &
+                            # (df['second_combined_diff_filtered'] < 0.3)
+                        )
+                        |
+                        (
+                            (
+                                (
+                                    (df['combined_diff_filtered_diff'] > 0)
+                                    &
+                                    (df['combined_diff_diff'] > 0)
+                                    &
+                                    (
+                                        (df['combined_diff_filtered'].shift(1) < 0.2)
+                                        &
+                                        (df['combined_diff_filtered'] > 0.2)
+                                    )
+                                    &
+                                    (df['second_combined_diff'] < 0.4)
+                                    &
+                                    (df['second_combined_diff_filtered'] < 0.4)
+                                )
+                            )
+                                &
+                            (df['second_combined_diff_filtered_diff'] > 0)
+                                &
+                            (df['second_combined_diff_diff'] > 0)
+                        )
                     )
                     , "stg1_long"] = 2 # without atr
 
                 df.loc[
                     (
-                        # (df.maxima_peak_x_MACD_12_26_9 < 0) # | 
-                        (df.maxima_peak_x_MACD_50_75_35 < 0)
-                        &
-                        (df['combined_diff_filtered_diff'] > 0)
-                        # &
-                        # (df['combined_diff_filtered'] < 0.2)
-                        # &
-                        # (df['combined_diff_filtered'] > 0.15)
-                        # &
-                        # # (df['second_combined_diff_filtered'] > 0)
-                        &
-                        (df['second_combined_diff_filtered_diff'] < 0)
-                        # &
-                        # (df['second_combined_diff_diff'] > 0)
-                        # &
-                        # (df['second_combined_diff_filtered'] > -0.3)
+                        (
+                            # (df.maxima_peak_x_MACD_12_26_9 < 0) # | 
+                            (df.maxima_peak_x_MACD_50_75_35 < 0)
+                            &
+                            (df['combined_diff_diff'] > 0)
+                            # &
+                            # (df['combined_diff_filtered'] < 0.2)
+                            # &
+                            # (df['combined_diff_filtered'] > 0.15)
+                            # &
+                            # # (df['second_combined_diff_filtered'] > 0)
+                            &
+                            (df['second_combined_diff_diff'] < 0)
+                            # &
+                            # (df['second_combined_diff_diff'] > 0)
+                            # &
+                            # (df['second_combined_diff_filtered'] > -0.3)
+                        )
+                        |
+                        (
+                            (
+                                (
+                                    (df['combined_diff_filtered_diff'] > 0)
+                                    &
+                                    (df['combined_diff_diff'] > 0)
+                                    &
+                                    (
+                                        (df['combined_diff_filtered'].shift(1) < 0.2)
+                                        &
+                                        (df['combined_diff_filtered'] > 0.2)
+                                    )
+                                    &
+                                    (df['second_combined_diff'] > -0.4)
+                                    &
+                                    (df['second_combined_diff_filtered'] > -0.4)
+                                )
+                            )
+                                    &
+                                (df['second_combined_diff_filtered_diff'] < 0)
+                                    &
+                                (df['second_combined_diff_diff'] < 0)
+                        )
                     )
                     , "stg1_short"] = -2 # without atr
 
@@ -8647,37 +8711,31 @@ def peak_calc(market_id, intervals): # df_1m, df_3m, df_5m, df_15m, df_30m, df_1
     common_long, common_short = multiple_frame_stg(intervals_3)
     update_stg_values(common_long, common_short, smallest_interval)
 
-
+    interval_not_in_df_intv_ = ['15m', '30m', '1h', '2h', '4h']
     for intv_ in intervals:
-        df_intv_ = globals()[f'df_{intv_}']
+        if intv_ not in interval_not_in_df_intv_:
+            df_intv_ = globals()[f'df_{intv_}']
+            if intv_ == '1m':
+                df_intv_.loc[
+                    (df_intv_['stg1_long'] > 0) | (df_intv_['stg3_long'] > 0),
+                    'stgT_long'
+                ] = 2  # without atr
 
-        if intv_ == '1m':
+                df_intv_.loc[
+                    (df_intv_['stg1_short'] < 0) | (df_intv_['stg3_short'] < 0),
+                    'stgT_short'
+                ] = -2  # without atr
 
-            df_intv_.loc[
-                (df_intv_['stg3_long'] > 0),
-                'stgT_long'
-            ] = 2  # without atr
+            else:
+                df_intv_.loc[
+                    (df_intv_['stg1_long'] > 0) | (df_intv_['stg2_long'] > 0) | (df_intv_['stg3_long'] > 0) | (df_intv_['stg10_long'] > 0),
+                    'stgT_long'
+                ] = 2  # without atr
 
-            df_intv_.loc[
-                (df_intv_['stg3_short'] < 0),
-                'stgT_short'
-            ] = -2  # without atr
-
-        else:
-            df_intv_.loc[
-                (df_intv_['stg1_long'] > 0) | (df_intv_['stg2_long'] > 0) | (df_intv_['stg3_long'] > 0) | (df_intv_['stg10_long'] > 0),
-                'stgT_long'
-            ] = 2  # without atr
-
-            df_intv_.loc[
-                (df_intv_['stg1_short'] < 0) | (df_intv_['stg2_short'] < 0) | (df_intv_['stg3_short'] < 0) | (df_intv_['stg10_short'] < 0),
-                'stgT_short'
-            ] = -2  # without atr
-
-
-
-
-
+                df_intv_.loc[
+                    (df_intv_['stg1_short'] < 0) | (df_intv_['stg2_short'] < 0) | (df_intv_['stg3_short'] < 0) | (df_intv_['stg10_short'] < 0),
+                    'stgT_short'
+                ] = -2  # without atr
     return
 
 def time_to_seconds_converter_cal(atr_time):
@@ -8826,7 +8884,7 @@ def confirmer():
     globals()['interval_not_in_stg2'] = ['1m', '3m', '15m', '30m', '1h', '2h', '4h', '6h', '8h', '12h', '1d', '3d'] # '1m', '5m', '15m'
     # globals()['interval_not_in_stg3'] =  ['1m', '3m', '5m', '30m', '1h', '2h', '4h', '6h', '8h', '12h', '1d', '3d']
     globals()['interval_not_in_stg3'] =  ['3m', '30m', '1h', '2h', '4h', '6h', '8h', '12h', '1d', '3d'] # '5m', '15m'
-    globals()['interval_not_in_stg10'] = ['1m', '3m', '30m', '1h', '2h', '4h', '6h', '8h', '12h', '1d', '3d'] # '5m', '15m'
+    globals()['interval_not_in_stg10'] = ['3m', '30m', '1h', '2h', '4h', '6h', '8h', '12h', '1d', '3d'] # '5m', '15m'
     globals()['interval_not_in_stg110'] = ['3m', '5m', '15m', '30m', '1h', '2h', '4h', '6h', '8h', '12h', '1d', '3d'] # '1m'
     globals()['interval_not_in_stg_scalping_0'] = ['1m', '3m', '5m', '15m', '30m']
     ############################################# back_tester #######################################################################################################
@@ -9538,7 +9596,7 @@ def big_boss_trend_re_2(market_id, intervals):
     """
     가장 최근에 생긴 pick의  interval_, 방향, 확인
     """
-    interval_not_in_big_boss_trend = ['30m', '1h', '2h', '4h']
+    interval_not_in_big_boss_trend = ['15m', '30m', '1h', '2h', '4h']
     # interval_ = side_ = last_time_ = big_boss_trend_checker_ = ''
     # latest_non_zero = interval_ = side_= last_time_ = None  # Initialize latest_non_zero
     latest_non_zero = interval_ = side_= side= last_time_ = None  # Initialize latest_non_zero
@@ -9547,7 +9605,7 @@ def big_boss_trend_re_2(market_id, intervals):
         if interval not in interval_not_in_big_boss_trend:
             big_boss_trend_checker = ''
             df_interval = globals()['df_' + interval]
-            recent_5_rows = df_interval.tail(5)
+            recent_5_rows = df_interval.tail(3)
             current_d_ = df_interval.iloc[-1]
             # non_zero_rows = df_interval[(df_interval['stgT_short'] != 0) | (df_interval['stgT_long'] != 0)]
             non_zero_rows = recent_5_rows[
@@ -9556,7 +9614,7 @@ def big_boss_trend_re_2(market_id, intervals):
             ]
             print('\n\n\n\n22222222####%%%%%%%%%%%%%%%%%%%%####################**********')
             print('2', interval)
-            print(non_zero_rows[['stgT_short', 'stgT_long']].tail(2))
+            print(non_zero_rows[['stgT_short', 'stgT_long']].tail(3))
             if not non_zero_rows.empty:
                 last_non_zero = non_zero_rows.iloc[-1]
                 last_time = last_non_zero['close_time']
@@ -11145,8 +11203,8 @@ def calculate_max_leverage(predicted_change, market_max_leverage, max_leverage=1
     # 변동성 제한
     if predicted_change < 1:
         predicted_change = 1  # 최소 변동성 1%로 고정
-    elif predicted_change > 100:
-        predicted_change = 100  # 최대 변동성 100%로 고정
+    # elif predicted_change > 100:
+    #     predicted_change = 100  # 최대 변동성 100%로 고정
 
     # 안전 마진 설정
     safety_margin = 1.5  # 예상 변동성 대비 여유 배수
@@ -11347,19 +11405,20 @@ p_clear_cnt = 0
 ######################################################################################################################################################
 if exchange_id == 'binanceusdm':
 
-    try:
-        # 마진 모드 변경
-        margin_mode = 'CROSS'  # 'ISOLATED' 또는 'CROSS'
-        response = exchange.set_margin_mode(symbol=symbol, marginMode=margin_mode)
-    except Exception as e:
-        print("오류 발생:", str(e))
-
     # Set initial parameters
     # symbol = "RENUSDT"
     initial_leverage = 50  # Starting leverage
     min_leverage = 1        # Minimum leverage to attempt
     c_l = initial_leverage
     t_s = 15
+
+    try:
+        # 마진 모드 변경
+        margin_mode = 'CROSS'  # 'ISOLATED' 또는 'CROSS'
+        response = exchange.set_margin_mode(symbol=symbol, marginMode=margin_mode)
+    except Exception as e:
+        print("오류 발생:", str(e))
+        time.sleep(t_s)
 
     # Try setting leverage
     while c_l >= min_leverage:
@@ -11382,19 +11441,20 @@ if exchange_id == 'binanceusdm':
         print("Unable to set leverage within the allowed range.")
 elif exchange_id == 'bybit':
 
-    try:
-        # 마진 모드 변경
-        margin_mode = 'cross'  # 'ISOLATED' 또는 'CROSS'
-        response = exchange.set_margin_mode(symbol=l_s, marginMode=margin_mode)
-    except Exception as e:
-        print("오류 발생:", str(e))
-
     # Set initial parameters
     # symbol = "RENUSDT"
     initial_leverage = 50  # Starting leverage
     min_leverage = 1        # Minimum leverage to attempt
     c_l = initial_leverage
     t_s = 15
+
+    try:
+        # 마진 모드 변경
+        margin_mode = 'cross'  # 'ISOLATED' 또는 'CROSS'
+        response = exchange.set_margin_mode(symbol=l_s, marginMode=margin_mode)
+    except Exception as e:
+        print("오류 발생:", str(e))
+        time.sleep(t_s)
 
     # Try setting leverage
     while c_l >= min_leverage:
@@ -11417,12 +11477,12 @@ market_max_leverage = c_l  # c_l이 이미 마켓에서 허용하는 최대 레�
 ######################################################################################################################################################
 predicted_change = calculate_predicted_change(market_id)
 if predicted_change < 8:
-    max_leverage = calculate_max_leverage(predicted_change, market_max_leverage)*3
-    lev_limit = calculate_max_leverage(predicted_change, market_max_leverage)*3
+    max_leverage = calculate_max_leverage(predicted_change, market_max_leverage)
+    lev_limit = calculate_max_leverage(predicted_change, market_max_leverage)
 else:
     max_leverage = calculate_max_leverage(predicted_change, market_max_leverage)
     lev_limit = calculate_max_leverage(predicted_change, market_max_leverage)
-r = 1.6
+r = 1.4
 stopPrice_const = 2
 atr_const = 0.7 # 70%
 atr_const2 = .87 # 100%
@@ -11558,8 +11618,8 @@ while True:
         exit_order_position_amount = exit_order_position_amount_calc(position_size)
         predicted_change = calculate_predicted_change(market_id)
         if predicted_change < 8:
-            max_leverage = calculate_max_leverage(predicted_change, market_max_leverage)*3
-            lev_limit = calculate_max_leverage(predicted_change, market_max_leverage)*3
+            max_leverage = calculate_max_leverage(predicted_change, market_max_leverage)
+            lev_limit = calculate_max_leverage(predicted_change, market_max_leverage)
         else:
             max_leverage = calculate_max_leverage(predicted_change, market_max_leverage)
             lev_limit = calculate_max_leverage(predicted_change, market_max_leverage)
@@ -11848,9 +11908,9 @@ while True:
                             # and (df_15m.feature1.iloc[-1] > 0)
                             and (peaker_side == 'long')
                             and (peaker_option == 'forward')
-                            # and (globals()['df_1m']['second_combined_diff_filtered'].iloc[-1] < 0.7)
-                            # and (globals()['df_5m']['second_combined_diff_filtered'].iloc[-1] < 0.7)
-                            # and ((globals()['df_15m']['second_combined_diff_filtered'].iloc[-1]) < 0.7)
+                            and (globals()['df_1m']['second_combined_diff_filtered'].iloc[-1] < 0.5)
+                            and (globals()['df_5m']['second_combined_diff_filtered'].iloc[-1] < 0.4)
+                            and ((globals()['df_15m']['second_combined_diff_filtered'].iloc[-1]) < 0.4)
                             # and (globals()['df_1m']['second_combined_diff_filtered_diff'].iloc[-1] > 0)
                             # and not ((df_1h['feature1'].iloc[-1] > 0) and (df_1h['feature1_diff'].iloc[-1] > 0))
                         )
@@ -11902,9 +11962,9 @@ while True:
                             (stg_type in ['stg1'])
                             and (peaker_side == 'long')
                             and (peaker_option == 'forward')
-                            # and (globals()['df_1m']['second_combined_diff_filtered'].iloc[-1] < 0.7)
-                            # and (globals()['df_5m']['second_combined_diff_filtered'].iloc[-1] < 0.7)
-                            # and ((globals()['df_15m']['second_combined_diff_filtered'].iloc[-1]) < 0.7)
+                            and (globals()['df_1m']['second_combined_diff_filtered'].iloc[-1] < 0.5)
+                            and (globals()['df_5m']['second_combined_diff_filtered'].iloc[-1] < 0.4)
+                            and ((globals()['df_15m']['second_combined_diff_filtered'].iloc[-1]) < 0.4)
                             # and (globals()['df_15m']['second_combined_diff_filtered'].iloc[-1] < 0.3)
                             # and (globals()['df_4h']['second_combined_diff_filtered'].iloc[-1] < 0.3)
 
@@ -11967,9 +12027,9 @@ while True:
                             # and (position_size == 0)
                             and (peaker_side == 'long')
                             and (peaker_option == 'forward')
-                            # and (globals()['df_1m']['second_combined_diff_filtered'].iloc[-1] < 0.7)
-                            # and (globals()['df_5m']['second_combined_diff_filtered'].iloc[-1] < 0.7)
-                            # and ((globals()['df_15m']['second_combined_diff_filtered'].iloc[-1]) < 0.7)
+                            and (globals()['df_1m']['second_combined_diff_filtered'].iloc[-1] < 0.5)
+                            and (globals()['df_5m']['second_combined_diff_filtered'].iloc[-1] < 0.4)
+                            and ((globals()['df_15m']['second_combined_diff_filtered'].iloc[-1]) < 0.4)
                             and (df_1m['RSI_14'].iloc[-1] < 70)
                             and (df_5m['RSI_14'].iloc[-1] < 70)
                             and (df_1m['macd_diff_35'].iloc[-3] > 0)
@@ -12284,9 +12344,9 @@ while True:
                             # and (df_15m.feature1.iloc[-1] > 0)
                             and (peaker_side == 'short')
                             and (peaker_option == 'forward')
-                            # and (globals()['df_1m']['second_combined_diff_filtered'].iloc[-1] > -0.7)
-                            # and (globals()['df_5m']['second_combined_diff_filtered'].iloc[-1] > -0.7)
-                            # and ((globals()['df_15m']['second_combined_diff_filtered'].iloc[-1]) > -0.7)
+                            and (globals()['df_1m']['second_combined_diff_filtered'].iloc[-1] > -0.5)
+                            and (globals()['df_5m']['second_combined_diff_filtered'].iloc[-1] > -0.4)
+                            and ((globals()['df_15m']['second_combined_diff_filtered'].iloc[-1]) > -0.4)
                             # and (globals()['df_1m']['second_combined_diff_filtered_diff'].iloc[-1] < 0)
                             # and not ((df_1h['feature1'].iloc[-1] > 0) and (df_1h['feature1_diff'].iloc[-1] > 0))
                         )
@@ -12339,9 +12399,9 @@ while True:
                             (stg_type in ['stg1'])
                             and (peaker_side == 'short')
                             and (peaker_option == 'forward')
-                            # and (globals()['df_1m']['second_combined_diff_filtered'].iloc[-1] > -0.7)
-                            # and (globals()['df_5m']['second_combined_diff_filtered'].iloc[-1] > -0.7)
-                            # and ((globals()['df_15m']['second_combined_diff_filtered'].iloc[-1]) > -0.7)
+                            and (globals()['df_1m']['second_combined_diff_filtered'].iloc[-1] > -0.5)
+                            and (globals()['df_5m']['second_combined_diff_filtered'].iloc[-1] > -0.4)
+                            and ((globals()['df_15m']['second_combined_diff_filtered'].iloc[-1]) > -0.4)
                             # and (globals()['df_15m']['second_combined_diff_filtered'].iloc[-1] > -0.3)
                             # and (globals()['df_4h']['second_combined_diff_filtered'].iloc[-1] > -0.3)
 
@@ -12416,9 +12476,9 @@ while True:
                             # and (position_size == 0)
                             and (peaker_side == 'short')
                             and (peaker_option == 'forward')
-                            # and (globals()['df_1m']['second_combined_diff_filtered'].iloc[-1] > -0.7)
-                            # and (globals()['df_5m']['second_combined_diff_filtered'].iloc[-1] > -0.7)
-                            # and ((globals()['df_15m']['second_combined_diff_filtered'].iloc[-1]) > -0.7)
+                            and (globals()['df_1m']['second_combined_diff_filtered'].iloc[-1] > -0.5)
+                            and (globals()['df_5m']['second_combined_diff_filtered'].iloc[-1] > -0.4)
+                            and ((globals()['df_15m']['second_combined_diff_filtered'].iloc[-1]) > -0.4)
                             and (df_1m['RSI_14'].iloc[-1] > 30)
                             and (df_5m['RSI_14'].iloc[-1] > 30)
                             and (df_1m['macd_diff_35'].iloc[-3] < 0)
