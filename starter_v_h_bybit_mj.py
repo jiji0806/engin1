@@ -1132,11 +1132,12 @@ while True:
 
 
                     print(
-
                         (
                             (globals()['df_15m']['ADX_200'].count() > 500)
                                 and
                             ((globals()['df_15m']['combined_diff_filtered_diff'].iloc[-1]) > 0)
+                            #     and
+                            # (predicted_change < 30)
 
 
 
@@ -1287,8 +1288,8 @@ while True:
                                     (globals()['df_15m']['ADX_200'].count() > 500)
                                         and
                                     ((globals()['df_15m']['combined_diff_filtered_diff'].iloc[-1]) > 0)
-                                        and
-                                    (predicted_change < 30)
+                                    #     and
+                                    # (predicted_change < 30)
 
 
 
