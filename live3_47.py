@@ -166,7 +166,7 @@ entry_order_timestamp = 0
 exit_order_timestamp = 0
 position_entry_time = 0
 
-scale_order_max_limit = 3.9
+scale_order_max_limit = 5.9
 # min_order_amount = float(cpu['info']['min_order_amount']) # volatility == False
 
 # max_leverage = 15
