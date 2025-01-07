@@ -70,6 +70,7 @@ from adtk.detector import RegressionAD
 from sklearn.linear_model import LinearRegression
 from adtk.detector import PcaAD
 from adtk.detector import QuantileAD
+from scipy.stats import pearsonr
 
 # AnomalyDetection
 from scipy import sparse, stats
@@ -144,7 +145,11 @@ interval = '1m'
 # intervals = [] # cumulate_lv_calc 에 사용
 # intervals = cpu['info']['itvs']
 # intervals = ['1m', '5m', '15m', '30m', '1h', '2h', '4h', '6h', '8h']
-intervals = ['1m', '5m', '15m', '1h']
+full_interval_list = ['1m', '3m', '5m', '15m', '30m', '1h', '2h', '4h', '6h', '8h', '12h', '1d', '3d']
+# 비교할 이평선들
+comparison_columns = ['WMA_7', 'VWMA_7', 'SMA_7', 'SMA_21', 'SMA_50', 'SMA_100', 'SMA_200', 
+                      'EMA_7', 'EMA_18', 'EMA_21', 'EMA_50', 'EMA_100', 'EMA_200']
+intervals = ['1m', '3m', '5m', '15m', '30m', '1h']
 # intervals = ['1m', '15m']
 valid_intervals = []
 # intervals = ['1m', '5m', '15m', '1h']
@@ -1036,6 +1041,18 @@ def ta_data_frame_calc(market_id, interval):
     df.ta.strategy(CustomStrategy) # To run your "Custom Strategy"
     return df
 
+def maxima_minima_calc_simple_v(high_1, high_2, atr_prominence, x, y_close):
+    maxima_val_close = find_peaks(y_close, height=high_1, prominence=atr_prominence)
+    maxima_peak_y_close = maxima_val_close[1]['peak_heights']
+    maxima_peak_x_close = x[maxima_val_close[0]]
+
+    y2_close = y_close * -1
+    minima_val_close = find_peaks(y2_close, height=high_2, prominence=atr_prominence)
+    minima_peak_y_close = y2_close[minima_val_close[0]] * -1
+    minima_peak_x_close = x[minima_val_close[0]]
+
+    return maxima_peak_x_close, maxima_peak_y_close, minima_peak_x_close, minima_peak_y_close
+
 def maxima_minima_calc(high_1, high_2, rsi_prominence, MACD_12_26_9_prominence, MACD_50_75_35_prominence, dx_prominence, adx_prominence, atr_prominence, obv_prominence, combined_diff_prominence, x, y_open, y_high, y_low, y_close, y_rsi, y_MACD_12_26_9, y_MACD_50_75_35, y_adx, y_dx, y_dmp, y_dmn, y_kdj, y_obv, y_atr, y_atr14, y_atr_p, y_combined_diff, y_combined_diff_filtered, y_second_combined_diff, y_second_combined_diff_filtered):
 
     distance = 1
@@ -1475,7 +1492,7 @@ def db_insert(trader_name, exchange_id, market_id, volatility_macro_state, volat
 def check_pointer(trader_name, exchange_id, market_id, balance_currency, loop, max_waiting_in_second, exit_status, message):
     wallet_balance = balance_calc(exchange_id, balance_currency)
     position_side, position_size, position_value, position_entry_price, position_entry_time, liquidation_price, unrealised_pnl, roe_pcnt = position_calc(exchange_id, market_id)
-    interval_, side_, last_time_, big_boss_trend_checker = big_boss_trend_re_2(symbol, globals()['valid_intervals'])
+    interval_, side_, last_time_, big_boss_trend_checker = big_boss_trend_re_2(symbol, [top_1_best_fit[0]])
 
     scaled_level_n = scale_order_position_amount_calc(min_order_amount, wallet_balance, max_leverage, position_size, r, scale_order_max_limit)[3]
     open_order_counter, open_order_side, open_order_size, open_order_price, open_order_type, stop_market_counter = open_order_calc(exchange_id, market_id)
@@ -1668,7 +1685,48 @@ def update_stg_values(common_long, common_short, smallest_interval):
 
 
 
+# 상관계수 계산 함수
+def calculate_correlation(base_close, target_close):
+    min_len = min(len(base_close), len(target_close))  # 길이가 다른 경우 짧은 길이에 맞추기
+    base_close = base_close[-min_len:]
+    target_close = target_close[-min_len:]
+    correlation, _ = pearsonr(base_close, target_close)
+    return correlation
 
+# Best fit 찾기 (순위대로 나열)
+def find_best_fits(intervals, comparison_columns):
+    comparison_results = []
+    
+    # 각 시간 프레임에서 비교할 이평선들만 사용
+    for interval in intervals:
+        print(interval)
+        # 데이터프레임 동적 가져오기 (interval에 맞는 데이터프레임을 globals()에서 찾아옴)
+        df = globals().get(f"df_{interval}")
+        
+        if df is not None:
+            # 각 시간 프레임에서 비교할 이평선들
+            for column in comparison_columns:
+                min_len = n_points = 0
+                if column in df.columns:
+                    min_len = df['close'].count()
+                    n_points = min(min_len, df[column].count())
+
+                    # n_points는 가장 작은 유효 길이로 설정
+                    # print(interval, column, n_points)
+                    
+                    # 해당 시간 프레임의 'close' 값과 이평선들을 사용
+                    target_close = df['close'].iloc[-n_points:].values
+                    
+                    # 해당 이평선 값 추출
+                    target_indicator = df[column].iloc[-n_points:].values
+                    # 상관계수 계산
+                    correlation = calculate_correlation(target_close, target_indicator)
+                    comparison_results.append((interval, column, correlation))
+
+    # 상관계수를 기준으로 내림차순 정렬
+    sorted_comparison_results = sorted(comparison_results, key=lambda x: x[2], reverse=True)
+    
+    return sorted_comparison_results
 
 
 
@@ -4261,30 +4319,30 @@ def peak_calc(market_id, intervals): # df_1m, df_3m, df_5m, df_15m, df_30m, df_1
                             # &
                             # (df['second_combined_diff_filtered'] < 0.3)
                         )
-                        |
-                        (
-                            (
-                                (
-                                    (df['combined_diff_filtered_diff'] > 0)
-                                    &
-                                    (df['combined_diff_diff'] > 0)
-                                    &
-                                    (
-                                        (df['combined_diff_filtered'].shift(1) < 0.2)
-                                        &
-                                        (df['combined_diff_filtered'] > 0.2)
-                                    )
-                                    &
-                                    (df['second_combined_diff'] < 0.4)
-                                    &
-                                    (df['second_combined_diff_filtered'] < 0.4)
-                                )
-                            )
-                                &
-                            (df['second_combined_diff_filtered_diff'] > 0)
-                                &
-                            (df['second_combined_diff_diff'] > 0)
-                        )
+                        # |
+                        # (
+                        #     (
+                        #         (
+                        #             (df['combined_diff_filtered_diff'] > 0)
+                        #             &
+                        #             (df['combined_diff_diff'] > 0)
+                        #             &
+                        #             (
+                        #                 (df['combined_diff_filtered'].shift(1) < 0.2)
+                        #                 &
+                        #                 (df['combined_diff_filtered'] > 0.2)
+                        #             )
+                        #             &
+                        #             (df['second_combined_diff'] < 0.4)
+                        #             &
+                        #             (df['second_combined_diff_filtered'] < 0.4)
+                        #         )
+                        #     )
+                        #         &
+                        #     (df['second_combined_diff_filtered_diff'] > 0)
+                        #         &
+                        #     (df['second_combined_diff_diff'] > 0)
+                        # )
                     )
                     , "stg1_long"] = 2 # without atr
 
@@ -4308,30 +4366,30 @@ def peak_calc(market_id, intervals): # df_1m, df_3m, df_5m, df_15m, df_30m, df_1
                             # &
                             # (df['second_combined_diff_filtered'] > -0.3)
                         )
-                        |
-                        (
-                            (
-                                (
-                                    (df['combined_diff_filtered_diff'] > 0)
-                                    &
-                                    (df['combined_diff_diff'] > 0)
-                                    &
-                                    (
-                                        (df['combined_diff_filtered'].shift(1) < 0.2)
-                                        &
-                                        (df['combined_diff_filtered'] > 0.2)
-                                    )
-                                    &
-                                    (df['second_combined_diff'] > -0.4)
-                                    &
-                                    (df['second_combined_diff_filtered'] > -0.4)
-                                )
-                            )
-                                    &
-                                (df['second_combined_diff_filtered_diff'] < 0)
-                                    &
-                                (df['second_combined_diff_diff'] < 0)
-                        )
+                        # |
+                        # (
+                        #     (
+                        #         (
+                        #             (df['combined_diff_filtered_diff'] > 0)
+                        #             &
+                        #             (df['combined_diff_diff'] > 0)
+                        #             &
+                        #             (
+                        #                 (df['combined_diff_filtered'].shift(1) < 0.2)
+                        #                 &
+                        #                 (df['combined_diff_filtered'] > 0.2)
+                        #             )
+                        #             &
+                        #             (df['second_combined_diff'] > -0.4)
+                        #             &
+                        #             (df['second_combined_diff_filtered'] > -0.4)
+                        #         )
+                        #     )
+                        #             &
+                        #         (df['second_combined_diff_filtered_diff'] < 0)
+                        #             &
+                        #         (df['second_combined_diff_diff'] < 0)
+                        # )
                     )
                     , "stg1_short"] = -2 # without atr
 
@@ -8705,37 +8763,120 @@ def peak_calc(market_id, intervals): # df_1m, df_3m, df_5m, df_15m, df_30m, df_1
 
 
                 globals()['df_'+interval] = df
-
+    ###############################################################################################################################################
     intervals_3 = ['5m', '15m']
     smallest_interval = min_interval_finder(intervals_3, point_frame)
     common_long, common_short = multiple_frame_stg(intervals_3)
     update_stg_values(common_long, common_short, smallest_interval)
 
-    interval_not_in_df_intv_ = ['15m', '30m', '1h', '2h', '4h']
-    for intv_ in intervals:
-        if intv_ not in interval_not_in_df_intv_:
-            df_intv_ = globals()[f'df_{intv_}']
-            if intv_ == '1m':
-                df_intv_.loc[
-                    (df_intv_['stg1_long'] > 0) | (df_intv_['stg3_long'] > 0),
-                    'stgT_long'
-                ] = 2  # without atr
+    ###############################################################################################################################################
+    # # interval_not_in_df_intv_ = ['15m', '30m', '1h', '2h', '4h']
+    # for intv_ in intervals:
+    #     # if intv_ not in interval_not_in_df_intv_:
+    #     df_intv_ = globals()[f'df_{intv_}']
+    #     if intv_ == '1m':
+    #         df_intv_.loc[
+    #             (df_intv_['stg1_long'] > 0) | (df_intv_['stg3_long'] > 0),
+    #             'stgT_long'
+    #         ] = 2  # without atr
 
-                df_intv_.loc[
-                    (df_intv_['stg1_short'] < 0) | (df_intv_['stg3_short'] < 0),
-                    'stgT_short'
-                ] = -2  # without atr
+    #         df_intv_.loc[
+    #             (df_intv_['stg1_short'] < 0) | (df_intv_['stg3_short'] < 0),
+    #             'stgT_short'
+    #         ] = -2  # without atr
 
-            else:
-                df_intv_.loc[
-                    (df_intv_['stg1_long'] > 0) | (df_intv_['stg2_long'] > 0) | (df_intv_['stg3_long'] > 0) | (df_intv_['stg10_long'] > 0),
-                    'stgT_long'
-                ] = 2  # without atr
+    #     else:
+    #         df_intv_.loc[
+    #             (df_intv_['stg1_long'] > 0) | (df_intv_['stg2_long'] > 0) | (df_intv_['stg3_long'] > 0) | (df_intv_['stg10_long'] > 0),
+    #             'stgT_long'
+    #         ] = 2  # without atr
 
-                df_intv_.loc[
-                    (df_intv_['stg1_short'] < 0) | (df_intv_['stg2_short'] < 0) | (df_intv_['stg3_short'] < 0) | (df_intv_['stg10_short'] < 0),
-                    'stgT_short'
-                ] = -2  # without atr
+    #         df_intv_.loc[
+    #             (df_intv_['stg1_short'] < 0) | (df_intv_['stg2_short'] < 0) | (df_intv_['stg3_short'] < 0) | (df_intv_['stg10_short'] < 0),
+    #             'stgT_short'
+    #         ] = -2  # without atr
+    ###############################################################################################################################################
+
+    # Best fit 순위대로 찾기
+    sorted_best_fits = find_best_fits(intervals, comparison_columns)
+
+    # 1등에서 5등까지의 인터벌을 리스트로 저장
+    globals()["top_intervals"] = list(set([interval for interval, _, _ in sorted_best_fits[:5]])) 
+
+
+    # 1등의 인터벌과 컬럼 이름을 리스트로 저장
+    globals()["top_1_best_fit"] = [sorted_best_fits[0][0], sorted_best_fits[0][1]]
+
+
+    print("Top 3 Intervals:", top_intervals)
+    print("Top 1 Interval and Column:", top_1_best_fit)
+
+
+
+
+
+
+    # Top 1 Interval과 Column에서 필요한 데이터 동적 설정
+    df_selected = globals()[f"df_{top_1_best_fit[0]}"]
+    y_selected = df_selected[top_1_best_fit[1]]
+
+
+    length_close_top_1_best_fit = len(df_selected.close) # Calculate the length of df_1m.close
+    high_1_top_1_best_fit = np.zeros(length_close_top_1_best_fit)  # Create an array of zeros with the same length
+    high_2_top_1_best_fit = np.full(length_close_top_1_best_fit, -100000000000)[:length_close_top_1_best_fit]
+
+    atr_prominence_top_1_best_fit = np.zeros(len(df_selected.close))
+    # atr_prominence[:len(df_selected['ATRr_1'])] = abs(df_selected['ATRr_1'].shift(1) * 1/100)
+    atr_prominence_top_1_best_fit[:len(df_selected['ATRr_14'])] = abs(df_selected['ATRr_14'].shift(1) * 1/100)
+
+    # 최대값/최소값 계산
+    maxima_peak_x_top_1_best_fit, maxima_peak_y_top_1_best_fit, minima_peak_x_top_1_best_fit, minima_peak_y_top_1_best_fit = maxima_minima_calc_simple_v(
+        high_1_top_1_best_fit, high_2_top_1_best_fit, atr_prominence_top_1_best_fit, df_selected['open_time2'], y_selected
+    )
+
+    # 동적으로 컬럼 이름 생성
+    maxima_col_name = f"maxima_peak_x_{top_1_best_fit[1]}"
+    minima_col_name = f"minima_peak_x_{top_1_best_fit[1]}"
+
+    # 최대값/최소값 정보를 데이터프레임에 저장
+    df_selected[maxima_col_name] = 0
+    df_selected[minima_col_name] = 0
+    df_selected.loc[maxima_peak_x_top_1_best_fit, maxima_col_name] = -1
+    df_selected.loc[minima_peak_x_top_1_best_fit, minima_col_name] = 1
+
+    # 조건 작성 및 업데이트
+    df_selected.loc[
+        (df_selected[minima_col_name] > 0), # & (df_selected['combined_diff_diff'] > 0),
+        "stgT_long"
+    ] = 2  # without ATR
+
+    df_selected.loc[
+        (df_selected[maxima_col_name] < 0), # & (df_selected['combined_diff_diff'] > 0),
+        "stgT_short"
+    ] = -2  # without ATR
+
+    # # 수정된 데이터프레임 저장
+    # globals()[f"df_{top_1_best_fit[0]}"] = df_selected  # top_1_best_fit[0] 사용
+
+
+
+
+
+
+
+
+
+
+    # Top 3 Intervals를 제외한 나머지 인터발을 동적으로 생성
+    # globals()['interval_not_in_stg1'] = [interval for interval in globals()['full_interval_list'] if interval not in top_intervals]
+    # globals()['interval_not_in_stg1'] = [interval for interval in globals()['full_interval_list'] if interval != top_1_best_fit[0]]
+    globals()['interval_not_in_stg1'] = [interval for interval in globals()['full_interval_list'] if interval not in top_intervals]
+    globals()['interval_not_in_big_boss_trend_2'] = [interval for interval in globals()['full_interval_list'] if interval != top_1_best_fit[0]]
+    # globals()['interval_not_in_big_boss_trend'] = [interval for interval in globals()['full_interval_list'] if interval not in top_intervals]
+    # globals()['interval_not_in_stg2'] = [interval for interval in globals()['full_interval_list'] if interval != top_1_best_fit[0]]
+    # globals()['interval_not_in_stg3'] = [interval for interval in globals()['full_interval_list'] if interval not in top_intervals]
+    # globals()['interval_not_in_stg10'] = [interval for interval in globals()['full_interval_list'] if interval not in top_intervals]
+
     return
 
 def time_to_seconds_converter_cal(atr_time):
@@ -8878,7 +9019,7 @@ def confirmer():
     #globals()['interval_not_in_stg0'] = ['1m', '3m', '15m', '30m', '2h', '4h', '6h', '8h', '12h', '1d', '3d'] # => single timeframe, 5m, 1h
     #globals()['interval_not_in_stg1'] = ['1m', '3m', '15m', '30m', '2h', '4h', '6h', '8h', '12h', '1d', '3d'] # => single timeframe, 5m, 1h
     
-    globals()['interval_not_in_stg1'] = ['1m', '3m', '30m', '1h', '2h', '4h', '6h', '8h', '12h', '1d', '3d'] # '1m', '5m', '15m'
+    # globals()['interval_not_in_stg1'] = ['1m', '3m', '30m', '1h', '2h', '4h', '6h', '8h', '12h', '1d', '3d'] # '1m', '5m', '15m'
     # globals()['interval_not_in_stg2'] = ['1m', '3m', '30m', '1h', '2h', '4h', '6h', '8h', '12h', '1d', '3d']
     # globals()['interval_not_in_stg3'] = ['3m', '30m', '1h', '2h', '4h', '6h', '8h', '12h', '1d', '3d'] # '1m', '5m', '15m', '1h', '2h', '4h', '6h', '8h', '12h', '1d', '3d'
     globals()['interval_not_in_stg2'] = ['1m', '3m', '15m', '30m', '1h', '2h', '4h', '6h', '8h', '12h', '1d', '3d'] # '1m', '5m', '15m'
@@ -9596,16 +9737,16 @@ def big_boss_trend_re_2(market_id, intervals):
     """
     가장 최근에 생긴 pick의  interval_, 방향, 확인
     """
-    interval_not_in_big_boss_trend = ['15m', '30m', '1h', '2h', '4h']
+    # interval_not_in_big_boss_trend = ['15m', '30m', '1h', '2h', '4h']
     # interval_ = side_ = last_time_ = big_boss_trend_checker_ = ''
     # latest_non_zero = interval_ = side_= last_time_ = None  # Initialize latest_non_zero
     latest_non_zero = interval_ = side_= side= last_time_ = None  # Initialize latest_non_zero
     big_boss_trend_checker_ = ''
     for interval in intervals:
-        if interval not in interval_not_in_big_boss_trend:
+        if interval not in interval_not_in_big_boss_trend_2:
             big_boss_trend_checker = ''
             df_interval = globals()['df_' + interval]
-            recent_5_rows = df_interval.tail(3)
+            recent_5_rows = df_interval.tail(5)
             current_d_ = df_interval.iloc[-1]
             # non_zero_rows = df_interval[(df_interval['stgT_short'] != 0) | (df_interval['stgT_long'] != 0)]
             non_zero_rows = recent_5_rows[
@@ -9614,7 +9755,7 @@ def big_boss_trend_re_2(market_id, intervals):
             ]
             print('\n\n\n\n22222222####%%%%%%%%%%%%%%%%%%%%####################**********')
             print('2', interval)
-            print(non_zero_rows[['stgT_short', 'stgT_long']].tail(3))
+            print(non_zero_rows[['stgT_short', 'stgT_long']].tail(50))
             if not non_zero_rows.empty:
                 last_non_zero = non_zero_rows.iloc[-1]
                 last_time = last_non_zero['close_time']
@@ -11553,7 +11694,7 @@ while True:
         print(f'[진입가:{position_entry_price}, 현재가:{symbol_ticker_last}, 역지가:{stop_loss_}]')
         print(f'[총 횟수:{total_played}, 익절:{total_wins}({win_rate}), 손절:{total_losses}({loss_rate}), new_position_size:{new_position_size}(${round((new_position_size*symbol_ticker_last), 2)})]')
         interval_, side_, last_time_, big_boss_trend_checker = big_boss_trend_re_3(symbol, globals()['valid_intervals'])
-        interval_2, side_2, last_time_2, big_boss_trend_checker_2 = big_boss_trend_re_2(symbol, globals()['valid_intervals'])
+        interval_2, side_2, last_time_2, big_boss_trend_checker_2 = big_boss_trend_re_2(symbol, [top_1_best_fit[0]])
         print('\n')
         high_list, low_list, high_list_len, low_list_len = volatility_checker() # 실행 해야 globals()['volatility_macro_state'])변수가 업데이트 됨.
         # if success:
@@ -11884,9 +12025,10 @@ while True:
 
 
             if stg_type in ['stg1', 'stg2', 'stg3', 'stg9', 'stg10', 'stg100', 'stg110']:
-                message = f"-peak is delivered, diff: [{globals()['df_1m']['combined_diff_filtered_diff'].iloc[-1]}, {globals()['df_5m']['combined_diff_filtered_diff'].iloc[-1]}, {globals()['df_15m']['combined_diff_filtered_diff'].iloc[-1]}, {globals()['df_1m']['second_combined_diff_filtered'].iloc[-1]}, {globals()['df_5m']['second_combined_diff_filtered'].iloc[-1]}, {globals()['df_15m']['second_combined_diff_filtered'].iloc[-1]}], stg_type: [{stg_type},{peaker_side},{peaker_option},{point_sum}], divergence_name: [{divergence_name}], -big_boss_추세:[{side_}, {interval_}, {last_time_}], -현재_추세와_big_boss_추세_일치:[{big_boss_trend_checker}]]"
+                message = f"-peak is delivered, diff: [{globals()['df_1m']['combined_diff_filtered_diff'].iloc[-1]}, {globals()['df_5m']['combined_diff_filtered_diff'].iloc[-1]}, {globals()['df_15m']['combined_diff_filtered_diff'].iloc[-1]}, {globals()['df_1m']['second_combined_diff_filtered'].iloc[-1]}, {globals()['df_5m']['second_combined_diff_filtered'].iloc[-1]}, {globals()['df_15m']['second_combined_diff_filtered'].iloc[-1]}], stg_type: [{stg_type},{peaker_side},{peaker_option},{point_sum}], divergence_name: [{divergence_name}], -big_boss_추세:[{side_}, {interval_}, {last_time_}], -현재_추세와_big_boss_추세_일치:[{big_boss_trend_checker}]] "
+                message += f"-top_1_best_fit: [{top_1_best_fit}], top_intervals: [{top_intervals}] "
                 message += f"-latest elapsed time: [{elapsed_times[-2]}], Initial Order Amount: [{initial_order_amount}]"
-                send_to_telegram(trader_name, symbol, message)
+                # send_to_telegram(trader_name, symbol, message)
             elif big_boss_trend_checker_2:
                 stg_type = 'stgZ'
                 peaker_side = big_boss_trend_checker_2
@@ -11962,9 +12104,11 @@ while True:
                             (stg_type in ['stg1'])
                             and (peaker_side == 'long')
                             and (peaker_option == 'forward')
-                            and (globals()['df_1m']['second_combined_diff_filtered'].iloc[-1] < 0.5)
-                            and (globals()['df_5m']['second_combined_diff_filtered'].iloc[-1] < 0.4)
-                            and ((globals()['df_15m']['second_combined_diff_filtered'].iloc[-1]) < 0.4)
+                            # and (globals()['df_1m']['second_combined_diff_filtered'].iloc[-1] < 0.5)
+                            # and (globals()['df_5m']['second_combined_diff_filtered'].iloc[-1] < 0.4)
+                            # and ((globals()['df_15m']['second_combined_diff_filtered'].iloc[-1]) < 0.4)
+                            # and (globals()['atr_pick'] == top_1_best_fit[0])
+                            and (globals()['atr_pick'] in top_intervals)
                             # and (globals()['df_15m']['second_combined_diff_filtered'].iloc[-1] < 0.3)
                             # and (globals()['df_4h']['second_combined_diff_filtered'].iloc[-1] < 0.3)
 
@@ -12032,8 +12176,26 @@ while True:
                             and ((globals()['df_15m']['second_combined_diff_filtered'].iloc[-1]) < 0.4)
                             and (df_1m['RSI_14'].iloc[-1] < 70)
                             and (df_5m['RSI_14'].iloc[-1] < 70)
-                            and (df_1m['macd_diff_35'].iloc[-3] > 0)
-                            and (df_1m['macdh_diff_35'].iloc[-3] > 0)
+                            and 
+                            (
+                                (
+                                    (position_size != 0)
+                                    and (position_side == 'short')
+                                )
+                                or
+                                (
+                                    (position_size != 0)
+                                    and (position_side == 'long')
+                                    and (scaled_level_n < 0.5)
+                                )
+                                or 
+                                (
+                                    (position_size == 0)
+                                )
+                            )
+                            # and (df_1m['macd_diff_35'].iloc[-3] > 0)
+                            # and (df_1m['macdh_diff_35'].iloc[-3] > 0)
+                            # and (globals()['atr_pick'] in top_intervals)
                             # and (globals()['df_' + globals()['atr_pick']]['high'].max() > globals()['df_' + globals()['atr_pick']]['high'].iloc[-1])
                             # and (globals()['df_' + globals()['atr_pick']]['low'].min() < globals()['df_' + globals()['atr_pick']]['low'].iloc[-1])
                             
@@ -12054,6 +12216,10 @@ while True:
                             # and (globals()['df_' + globals()['atr_pick']]['rsi_diff'].iloc[-1] > 0)
                         )
                 ):
+                    message = f"-peak is delivered, diff: [{globals()['df_1m']['combined_diff_filtered_diff'].iloc[-1]}, {globals()['df_5m']['combined_diff_filtered_diff'].iloc[-1]}, {globals()['df_15m']['combined_diff_filtered_diff'].iloc[-1]}, {globals()['df_1m']['second_combined_diff_filtered'].iloc[-1]}, {globals()['df_5m']['second_combined_diff_filtered'].iloc[-1]}, {globals()['df_15m']['second_combined_diff_filtered'].iloc[-1]}], stg_type: [{stg_type},{peaker_side},{peaker_option},{point_sum}], divergence_name: [{divergence_name}], -big_boss_추세:[{side_}, {interval_}, {last_time_}], -현재_추세와_big_boss_추세_일치:[{big_boss_trend_checker}]] "
+                    message += f"-top_1_best_fit: [{top_1_best_fit}], top_intervals: [{top_intervals}] "
+                    message += f"-latest elapsed time: [{elapsed_times[-2]}], Initial Order Amount: [{initial_order_amount}]"
+                    send_to_telegram(trader_name, symbol, message)
                     if (position_size != 0): # 포지션존재 # 3 ~ 5.
                         loop = 'long-forward-' + str(loop_counter)
                         message = f'현재 포지션이 존재합니다. stric_exit_min_price={stric_exit_min_price}'
@@ -12399,9 +12565,11 @@ while True:
                             (stg_type in ['stg1'])
                             and (peaker_side == 'short')
                             and (peaker_option == 'forward')
-                            and (globals()['df_1m']['second_combined_diff_filtered'].iloc[-1] > -0.5)
-                            and (globals()['df_5m']['second_combined_diff_filtered'].iloc[-1] > -0.4)
-                            and ((globals()['df_15m']['second_combined_diff_filtered'].iloc[-1]) > -0.4)
+                            # and (globals()['df_1m']['second_combined_diff_filtered'].iloc[-1] > -0.5)
+                            # and (globals()['df_5m']['second_combined_diff_filtered'].iloc[-1] > -0.4)
+                            # and ((globals()['df_15m']['second_combined_diff_filtered'].iloc[-1]) > -0.4)
+                            # and (globals()['atr_pick'] == top_1_best_fit[0])
+                            and (globals()['atr_pick'] in top_intervals)
                             # and (globals()['df_15m']['second_combined_diff_filtered'].iloc[-1] > -0.3)
                             # and (globals()['df_4h']['second_combined_diff_filtered'].iloc[-1] > -0.3)
 
@@ -12481,8 +12649,26 @@ while True:
                             and ((globals()['df_15m']['second_combined_diff_filtered'].iloc[-1]) > -0.4)
                             and (df_1m['RSI_14'].iloc[-1] > 30)
                             and (df_5m['RSI_14'].iloc[-1] > 30)
-                            and (df_1m['macd_diff_35'].iloc[-3] < 0)
-                            and (df_1m['macdh_diff_35'].iloc[-3] < 0)
+                            and 
+                            (
+                                (
+                                    (position_size != 0)
+                                    and (position_side == 'long')
+                                )
+                                or
+                                (
+                                    (position_size != 0)
+                                    and (position_side == 'short')
+                                    and (scaled_level_n < 0.5)
+                                )
+                                or 
+                                (
+                                    (position_size == 0)
+                                )
+                            )
+                            # and (df_1m['macd_diff_35'].iloc[-3] < 0)
+                            # and (df_1m['macdh_diff_35'].iloc[-3] < 0)
+                            # and (globals()['atr_pick'] in top_intervals)
                             # and (globals()['df_' + globals()['atr_pick']]['low'].min() < globals()['df_' + globals()['atr_pick']]['low'].iloc[-1])
                             # and (globals()['df_' + globals()['atr_pick']]['high'].max() > globals()['df_' + globals()['atr_pick']]['high'].iloc[-1])
 
@@ -12503,6 +12689,10 @@ while True:
                             # and (globals()['df_' + globals()['atr_pick']]['rsi_diff'].iloc[-1] < 0)
                         )
                 ):
+                    message = f"-peak is delivered, diff: [{globals()['df_1m']['combined_diff_filtered_diff'].iloc[-1]}, {globals()['df_5m']['combined_diff_filtered_diff'].iloc[-1]}, {globals()['df_15m']['combined_diff_filtered_diff'].iloc[-1]}, {globals()['df_1m']['second_combined_diff_filtered'].iloc[-1]}, {globals()['df_5m']['second_combined_diff_filtered'].iloc[-1]}, {globals()['df_15m']['second_combined_diff_filtered'].iloc[-1]}], stg_type: [{stg_type},{peaker_side},{peaker_option},{point_sum}], divergence_name: [{divergence_name}], -big_boss_추세:[{side_}, {interval_}, {last_time_}], -현재_추세와_big_boss_추세_일치:[{big_boss_trend_checker}]] "
+                    message += f"-top_1_best_fit: [{top_1_best_fit}], top_intervals: [{top_intervals}] "
+                    message += f"-latest elapsed time: [{elapsed_times[-2]}], Initial Order Amount: [{initial_order_amount}]"
+                    send_to_telegram(trader_name, symbol, message)
                     if (position_size != 0): # 포지션존재 7 ~ 9.
                         loop = 'short-forward-' + str(loop_counter)
                         message = f'현재 포지션이 존재합니다. stric_exit_min_price={stric_exit_min_price}'

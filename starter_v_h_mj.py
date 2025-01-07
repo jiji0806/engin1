@@ -1073,7 +1073,7 @@ base_markets = {
 intervals_2 = ['1m', '5m', '15m', '1h', '4h']
 # intervals_ = ['1h', '4h']
 # intervals = ['4h']
-intervals_ = ['5m', '15m']
+intervals_ = ['5m', '15m', '1h']
 intervals = ['15m']
 a = 0
 balance_currency = 'USDT'
@@ -1133,7 +1133,7 @@ while True:
 
                     print(
                         (
-                            (globals()['df_15m']['ADX_200'].count() > 500)
+                            (globals()['df_1h']['ADX_200'].count() > 250)
                                 and
                             ((globals()['df_15m']['combined_diff_filtered_diff'].iloc[-1]) > 0)
                             #     and
@@ -1285,7 +1285,7 @@ while True:
                                 # 1.
 
                                 (
-                                    (globals()['df_15m']['ADX_200'].count() > 500)
+                                    (globals()['df_1h']['ADX_200'].count() > 250)
                                         and
                                     ((globals()['df_15m']['combined_diff_filtered_diff'].iloc[-1]) > 0)
                                     #     and
