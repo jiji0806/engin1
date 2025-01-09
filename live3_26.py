@@ -9746,7 +9746,7 @@ def big_boss_trend_re_2(market_id, intervals):
         if interval not in interval_not_in_big_boss_trend_2:
             big_boss_trend_checker = ''
             df_interval = globals()['df_' + interval]
-            recent_5_rows = df_interval.tail(500)
+            recent_5_rows = df_interval.tail(5)
             current_d_ = df_interval.iloc[-1]
             # non_zero_rows = df_interval[(df_interval['stgT_short'] != 0) | (df_interval['stgT_long'] != 0)]
             non_zero_rows = recent_5_rows[
@@ -9755,7 +9755,7 @@ def big_boss_trend_re_2(market_id, intervals):
             ]
             print('\n\n\n\n22222222####%%%%%%%%%%%%%%%%%%%%####################**********')
             print('2', interval)
-            print(non_zero_rows[['stgT_short', 'stgT_long']].tail(50))
+            print(non_zero_rows[['stgT_short', 'stgT_long']].tail(5))
             if not non_zero_rows.empty:
                 last_non_zero = non_zero_rows.iloc[-1]
                 last_time = last_non_zero['close_time']
