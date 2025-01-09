@@ -171,7 +171,7 @@ entry_order_timestamp = 0
 exit_order_timestamp = 0
 position_entry_time = 0
 
-scale_order_max_limit = 5.9
+scale_order_max_limit = 2.5
 # min_order_amount = float(cpu['info']['min_order_amount']) # volatility == False
 
 # max_leverage = 15
@@ -9746,7 +9746,7 @@ def big_boss_trend_re_2(market_id, intervals):
         if interval not in interval_not_in_big_boss_trend_2:
             big_boss_trend_checker = ''
             df_interval = globals()['df_' + interval]
-            recent_5_rows = df_interval.tail(5)
+            recent_5_rows = df_interval.tail(500)
             current_d_ = df_interval.iloc[-1]
             # non_zero_rows = df_interval[(df_interval['stgT_short'] != 0) | (df_interval['stgT_long'] != 0)]
             non_zero_rows = recent_5_rows[
@@ -11618,11 +11618,11 @@ market_max_leverage = c_l  # c_l이 이미 마켓에서 허용하는 최대 레�
 ######################################################################################################################################################
 predicted_change = calculate_predicted_change(market_id)
 if predicted_change < 8:
-    max_leverage = calculate_max_leverage(predicted_change, market_max_leverage)
-    lev_limit = calculate_max_leverage(predicted_change, market_max_leverage)
+    max_leverage = calculate_max_leverage(predicted_change, market_max_leverage)*3
+    lev_limit = calculate_max_leverage(predicted_change, market_max_leverage)*3
 else:
-    max_leverage = calculate_max_leverage(predicted_change, market_max_leverage)
-    lev_limit = calculate_max_leverage(predicted_change, market_max_leverage)
+    max_leverage = calculate_max_leverage(predicted_change, market_max_leverage)*3
+    lev_limit = calculate_max_leverage(predicted_change, market_max_leverage)*3
 r = 1.4
 stopPrice_const = 2
 atr_const = 0.7 # 70%
@@ -11759,11 +11759,11 @@ while True:
         exit_order_position_amount = exit_order_position_amount_calc(position_size)
         predicted_change = calculate_predicted_change(market_id)
         if predicted_change < 8:
-            max_leverage = calculate_max_leverage(predicted_change, market_max_leverage)
-            lev_limit = calculate_max_leverage(predicted_change, market_max_leverage)
+            max_leverage = calculate_max_leverage(predicted_change, market_max_leverage)*3
+            lev_limit = calculate_max_leverage(predicted_change, market_max_leverage)*3
         else:
-            max_leverage = calculate_max_leverage(predicted_change, market_max_leverage)
-            lev_limit = calculate_max_leverage(predicted_change, market_max_leverage)
+            max_leverage = calculate_max_leverage(predicted_change, market_max_leverage)*3
+            lev_limit = calculate_max_leverage(predicted_change, market_max_leverage)*3
         wallet_balance = balance_calc(exchange_id, balance_currency)
         scale_order_position_amount_calc_val = scale_order_position_amount_calc(min_order_amount, wallet_balance, max_leverage, position_size, r, scale_order_max_limit)
         initial_order_amount = scale_order_position_amount_calc_val[1]
@@ -12171,18 +12171,14 @@ while True:
                             # and (position_size == 0)
                             and (peaker_side == 'long')
                             and (peaker_option == 'forward')
-                            and (globals()['df_1m']['second_combined_diff_filtered'].iloc[-1] < 0.5)
-                            and (globals()['df_5m']['second_combined_diff_filtered'].iloc[-1] < 0.4)
-                            and ((globals()['df_15m']['second_combined_diff_filtered'].iloc[-1]) < 0.4)
-                            and (df_1m['RSI_14'].iloc[-1] < 70)
-                            and (df_5m['RSI_14'].iloc[-1] < 70)
+                            # and (globals()['df_1m']['second_combined_diff_filtered'].iloc[-1] < 0.5)
+                            # and (globals()['df_5m']['second_combined_diff_filtered'].iloc[-1] < 0.4)
+                            # and ((globals()['df_15m']['second_combined_diff_filtered'].iloc[-1]) < 0.4)
+                            # and (df_1m['RSI_14'].iloc[-1] < 70)
+                            # and (df_5m['RSI_14'].iloc[-1] < 70)
+                            and (globals()[f"df_{top_1_best_fit[0]}"][top_1_best_fit[1]].iloc[-1] > ticker_calc(market_id)[1])
                             and 
                             (
-                                (
-                                    (position_size != 0)
-                                    and (position_side == 'short')
-                                )
-                                or
                                 (
                                     (position_size != 0)
                                     and (position_side == 'long')
@@ -12191,6 +12187,50 @@ while True:
                                 or 
                                 (
                                     (position_size == 0)
+                                )
+                            )
+                            # and (df_1m['macd_diff_35'].iloc[-3] > 0)
+                            # and (df_1m['macdh_diff_35'].iloc[-3] > 0)
+                            # and (globals()['atr_pick'] in top_intervals)
+                            # and (globals()['df_' + globals()['atr_pick']]['high'].max() > globals()['df_' + globals()['atr_pick']]['high'].iloc[-1])
+                            # and (globals()['df_' + globals()['atr_pick']]['low'].min() < globals()['df_' + globals()['atr_pick']]['low'].iloc[-1])
+                            
+                            # and (globals()['df_' + globals()['atr_pick']]['lowess_1'].iloc[-1] > globals()['df_' + globals()['atr_pick']]['close'].iloc[-1])
+                            # and (globals()['df_' + globals()['atr_pick']]['lowess_1_diff'].iloc[-1] > 0)
+
+                            # and (trade_type == "trending_trade")
+                            # and (trend_result == 'long')
+                            # and (trend_result != "short")
+                            # and (df_4h['adx_diff'].iloc[-1] > 0)
+                            # and (df_15m['adx_diff'].iloc[-1] > 0)
+                            # and (df_4h['ADX_14'].iloc[-1] > 25)
+                            # and ((df_4h['ATRr_1'].iloc[-1]) > (df_4h['close'].iloc[-1] * 0.8/100))
+                            # and (globals()['df_' + globals()['atr_pick']]['adx_diff'].iloc[-1] > 0)
+                            # and (df_1m['RSI_14'].iloc[-1] < 65)
+                            # and (df_5m['RSI_14'].iloc[-1] < 80)
+                            # and (globals()['df_' + globals()['atr_pick']]['j_diff'].iloc[-1] > 0)
+                            # and (globals()['df_' + globals()['atr_pick']]['rsi_diff'].iloc[-1] > 0)
+                        )
+                        or
+                        (
+                            (stg_type in ['stgZ'])
+                            # and ((stg_type_fixed in ['stg1']) or (position_size == 0))
+                            # and ((df_1h['feature1'].iloc[-1] > 0) and (df_1h['feature1_diff'].iloc[-1] > 0))
+                            # and not (df_15m.feature1.iloc[-1] < -0.2)
+                            # and (df_15m.feature1.iloc[-1] > 0)
+                            # and (position_size == 0)
+                            and (peaker_side == 'long')
+                            and (peaker_option == 'forward')
+                            # and (globals()['df_1m']['second_combined_diff_filtered'].iloc[-1] < 0.5)
+                            # and (globals()['df_5m']['second_combined_diff_filtered'].iloc[-1] < 0.4)
+                            # and ((globals()['df_15m']['second_combined_diff_filtered'].iloc[-1]) < 0.4)
+                            # and (df_1m['RSI_14'].iloc[-1] < 70)
+                            # and (df_5m['RSI_14'].iloc[-1] < 70)
+                            and 
+                            (
+                                (
+                                    (position_size != 0)
+                                    and (position_side == 'short')
                                 )
                             )
                             # and (df_1m['macd_diff_35'].iloc[-3] > 0)
@@ -12353,7 +12393,10 @@ while True:
                             # check_pointer(trader_name, exchange_id, market_id, balance_currency, loop, max_waiting_in_second, exit_status, message)
                             print(message)
                             symbol_ticker_last = ticker_calc(market_id)[1]
-                            exit_order_position_amount_re = (exit_order_position_amount + initial_order_amount)
+                            if (stg_type in ['stgZ']):
+                                exit_order_position_amount_re = (exit_order_position_amount)
+                            else:
+                                exit_order_position_amount_re = (exit_order_position_amount + initial_order_amount)
 
                             if exchange_id == 'huobi':
                                 limit_type_only_case_price_pick = float(exchange.price_to_precision(market_id, float(symbol_ticker_last)*(1 + 0.0005)))
@@ -12644,18 +12687,14 @@ while True:
                             # and (position_size == 0)
                             and (peaker_side == 'short')
                             and (peaker_option == 'forward')
-                            and (globals()['df_1m']['second_combined_diff_filtered'].iloc[-1] > -0.5)
-                            and (globals()['df_5m']['second_combined_diff_filtered'].iloc[-1] > -0.4)
-                            and ((globals()['df_15m']['second_combined_diff_filtered'].iloc[-1]) > -0.4)
-                            and (df_1m['RSI_14'].iloc[-1] > 30)
-                            and (df_5m['RSI_14'].iloc[-1] > 30)
+                            # and (globals()['df_1m']['second_combined_diff_filtered'].iloc[-1] > -0.5)
+                            # and (globals()['df_5m']['second_combined_diff_filtered'].iloc[-1] > -0.4)
+                            # and ((globals()['df_15m']['second_combined_diff_filtered'].iloc[-1]) > -0.4)
+                            # and (df_1m['RSI_14'].iloc[-1] > 30)
+                            # and (df_5m['RSI_14'].iloc[-1] > 30)
+                            and (globals()[f"df_{top_1_best_fit[0]}"][top_1_best_fit[1]].iloc[-1] < ticker_calc(market_id)[1])
                             and 
                             (
-                                (
-                                    (position_size != 0)
-                                    and (position_side == 'long')
-                                )
-                                or
                                 (
                                     (position_size != 0)
                                     and (position_side == 'short')
@@ -12664,6 +12703,50 @@ while True:
                                 or 
                                 (
                                     (position_size == 0)
+                                )
+                            )
+                            # and (df_1m['macd_diff_35'].iloc[-3] < 0)
+                            # and (df_1m['macdh_diff_35'].iloc[-3] < 0)
+                            # and (globals()['atr_pick'] in top_intervals)
+                            # and (globals()['df_' + globals()['atr_pick']]['low'].min() < globals()['df_' + globals()['atr_pick']]['low'].iloc[-1])
+                            # and (globals()['df_' + globals()['atr_pick']]['high'].max() > globals()['df_' + globals()['atr_pick']]['high'].iloc[-1])
+
+                            # and (globals()['df_' + globals()['atr_pick']]['lowess_1'].iloc[-1] < globals()['df_' + globals()['atr_pick']]['close'].iloc[-1])
+                            # and (globals()['df_' + globals()['atr_pick']]['lowess_1_diff'].iloc[-1] < 0)
+
+                            # and (trade_type == "trending_trade")
+                            # and (intersect == 1)
+                            # and (trend_result == 'short')
+                            # and (trend_result != "long")            
+                            # and (df_15m['adx_diff'].iloc[-1] > 0)
+                            # and (df_4h['ADX_14'].iloc[-1] > 25)
+                            # and ((df_4h['ATRr_1'].iloc[-1]) > (df_4h['close'].iloc[-1] * 0.8/100))
+                            # and (globals()['df_' + globals()['atr_pick']]['adx_diff'].iloc[-1] > 0)
+                            # and (df_1m['RSI_14'].iloc[-1] < 65)
+                            # and (df_5m['RSI_14'].iloc[-1] > 20)
+                            # and (globals()['df_' + globals()['atr_pick']]['j_diff'].iloc[-1] < 0)
+                            # and (globals()['df_' + globals()['atr_pick']]['rsi_diff'].iloc[-1] < 0)
+                        )
+                        or
+                        (
+                            (stg_type in ['stgZ'])
+                            # and ((stg_type_fixed in ['stg1']) or (position_size == 0))
+                            # and ((df_1h['feature1'].iloc[-1] > 0) and (df_1h['feature1_diff'].iloc[-1] > 0))
+                            # and not (df_15m.feature1.iloc[-1] < -0.2)
+                            # and (df_15m.feature1.iloc[-1] > 0)
+                            # and (position_size == 0)
+                            and (peaker_side == 'short')
+                            and (peaker_option == 'forward')
+                            # and (globals()['df_1m']['second_combined_diff_filtered'].iloc[-1] > -0.5)
+                            # and (globals()['df_5m']['second_combined_diff_filtered'].iloc[-1] > -0.4)
+                            # and ((globals()['df_15m']['second_combined_diff_filtered'].iloc[-1]) > -0.4)
+                            # and (df_1m['RSI_14'].iloc[-1] > 30)
+                            # and (df_5m['RSI_14'].iloc[-1] > 30)
+                            and 
+                            (
+                                (
+                                    (position_size != 0)
+                                    and (position_side == 'long')
                                 )
                             )
                             # and (df_1m['macd_diff_35'].iloc[-3] < 0)
@@ -12823,7 +12906,10 @@ while True:
                             # check_pointer(trader_name, exchange_id, market_id, balance_currency, loop, max_waiting_in_second, exit_status, message)
                             print(message)
                             symbol_ticker_last = ticker_calc(market_id)[1]
-                            exit_order_position_amount_re = (exit_order_position_amount + initial_order_amount)
+                            if (stg_type in ['stgZ']):
+                                exit_order_position_amount_re = (exit_order_position_amount)
+                            else:
+                                exit_order_position_amount_re = (exit_order_position_amount + initial_order_amount)
 
                             if exchange_id == 'huobi':
                                 limit_type_only_case_price_pick = float(exchange.price_to_precision(market_id, float(symbol_ticker_last)*(1 - 0.0005)))

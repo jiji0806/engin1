@@ -171,7 +171,7 @@ entry_order_timestamp = 0
 exit_order_timestamp = 0
 position_entry_time = 0
 
-scale_order_max_limit = 5.9
+scale_order_max_limit = 2.5
 # min_order_amount = float(cpu['info']['min_order_amount']) # volatility == False
 
 # max_leverage = 15
@@ -11618,11 +11618,11 @@ market_max_leverage = c_l  # c_l이 이미 마켓에서 허용하는 최대 레�
 ######################################################################################################################################################
 predicted_change = calculate_predicted_change(market_id)
 if predicted_change < 8:
-    max_leverage = calculate_max_leverage(predicted_change, market_max_leverage)
-    lev_limit = calculate_max_leverage(predicted_change, market_max_leverage)
+    max_leverage = calculate_max_leverage(predicted_change, market_max_leverage)*3
+    lev_limit = calculate_max_leverage(predicted_change, market_max_leverage)*3
 else:
-    max_leverage = calculate_max_leverage(predicted_change, market_max_leverage)
-    lev_limit = calculate_max_leverage(predicted_change, market_max_leverage)
+    max_leverage = calculate_max_leverage(predicted_change, market_max_leverage)*3
+    lev_limit = calculate_max_leverage(predicted_change, market_max_leverage)*3
 r = 1.4
 stopPrice_const = 2
 atr_const = 0.7 # 70%
@@ -11759,11 +11759,11 @@ while True:
         exit_order_position_amount = exit_order_position_amount_calc(position_size)
         predicted_change = calculate_predicted_change(market_id)
         if predicted_change < 8:
-            max_leverage = calculate_max_leverage(predicted_change, market_max_leverage)
-            lev_limit = calculate_max_leverage(predicted_change, market_max_leverage)
+            max_leverage = calculate_max_leverage(predicted_change, market_max_leverage)*3
+            lev_limit = calculate_max_leverage(predicted_change, market_max_leverage)*3
         else:
-            max_leverage = calculate_max_leverage(predicted_change, market_max_leverage)
-            lev_limit = calculate_max_leverage(predicted_change, market_max_leverage)
+            max_leverage = calculate_max_leverage(predicted_change, market_max_leverage)*3
+            lev_limit = calculate_max_leverage(predicted_change, market_max_leverage)*3
         wallet_balance = balance_calc(exchange_id, balance_currency)
         scale_order_position_amount_calc_val = scale_order_position_amount_calc(min_order_amount, wallet_balance, max_leverage, position_size, r, scale_order_max_limit)
         initial_order_amount = scale_order_position_amount_calc_val[1]
@@ -12171,11 +12171,12 @@ while True:
                             # and (position_size == 0)
                             and (peaker_side == 'long')
                             and (peaker_option == 'forward')
-                            and (globals()['df_1m']['second_combined_diff_filtered'].iloc[-1] < 0.5)
-                            and (globals()['df_5m']['second_combined_diff_filtered'].iloc[-1] < 0.4)
-                            and ((globals()['df_15m']['second_combined_diff_filtered'].iloc[-1]) < 0.4)
-                            and (df_1m['RSI_14'].iloc[-1] < 70)
-                            and (df_5m['RSI_14'].iloc[-1] < 70)
+                            # and (globals()['df_1m']['second_combined_diff_filtered'].iloc[-1] < 0.5)
+                            # and (globals()['df_5m']['second_combined_diff_filtered'].iloc[-1] < 0.4)
+                            # and ((globals()['df_15m']['second_combined_diff_filtered'].iloc[-1]) < 0.4)
+                            # and (df_1m['RSI_14'].iloc[-1] < 70)
+                            # and (df_5m['RSI_14'].iloc[-1] < 70)
+                            and (globals()[f"df_{top_1_best_fit[0]}"][top_1_best_fit[1]].iloc[-1] > ticker_calc(market_id)[1])
                             and 
                             (
                                 (
@@ -12644,11 +12645,12 @@ while True:
                             # and (position_size == 0)
                             and (peaker_side == 'short')
                             and (peaker_option == 'forward')
-                            and (globals()['df_1m']['second_combined_diff_filtered'].iloc[-1] > -0.5)
-                            and (globals()['df_5m']['second_combined_diff_filtered'].iloc[-1] > -0.4)
-                            and ((globals()['df_15m']['second_combined_diff_filtered'].iloc[-1]) > -0.4)
-                            and (df_1m['RSI_14'].iloc[-1] > 30)
-                            and (df_5m['RSI_14'].iloc[-1] > 30)
+                            # and (globals()['df_1m']['second_combined_diff_filtered'].iloc[-1] > -0.5)
+                            # and (globals()['df_5m']['second_combined_diff_filtered'].iloc[-1] > -0.4)
+                            # and ((globals()['df_15m']['second_combined_diff_filtered'].iloc[-1]) > -0.4)
+                            # and (df_1m['RSI_14'].iloc[-1] > 30)
+                            # and (df_5m['RSI_14'].iloc[-1] > 30)
+                            and (globals()[f"df_{top_1_best_fit[0]}"][top_1_best_fit[1]].iloc[-1] < ticker_calc(market_id)[1])
                             and 
                             (
                                 (
